@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="static/style.css">
+
+    <title>HELPr</title>
+</head>
+<body>
+    <h1>Submit a HELPr Ticket</h1>
+    <form autocomplete="off">
+        <label for="ticket-description">Description:</label>
+        <input id="ticket-description" name="ticket-description" type="text" maxlength="50"><br><br>
+        <label for="ticket-location">Location:</label>
+        <input id="ticket-location" name="ticket-location" type="text" maxlength="50"><br><br>
+        <label for="ticket-contact">Contact:</label>
+        <input id="ticket-contact" name="ticket-contact" type="text" maxlength="50"><br><br>
+    </form>
+    <button onclick="submit()">Submit</button>
+    <p id="message"></p>
+
+    <script>
+        let tDescription = document.getElementById("ticket-description")
+        let tLocation = document.getElementById("ticket-location")
+        let tContact = document.getElementById("ticket-contact")
+        let message = document.getElementById("message")
+
+        function submit ()
+        {
+            if (tDescription.value === "")
+            {
+                message.innerText = "Please include a description!"
+            }
+            else if (tLocation.value === "")
+            {
+                message.innerText = "Please include a location!"
+            }
+            else
+            {
+                let ticket = {
+                    $description: tDescription.value,
+                    $location: tLocation.value,
+                    $contact: tContact.value
+                }
+
+                fetch("/tickets", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(ticket)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    message.innerText = data.message
+                })
+            }
+        }
+    </script>
+</body>
+</html>

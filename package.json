@@ -1,0 +1,29 @@
+{
+  "name": "helpr",
+  "description": "A spiritual successor to HELPq",
+  "version": "0.1.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "live": "nodemon index.js",
+    "create_db": "node create_database.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tamuhack-org/helpR.git"
+  },
+  "author": "TAMUhack",
+  "bugs": {
+    "url": "https://github.com/tamuhack-org/helpR/issues"
+  },
+  "homepage": "https://github.com/tamuhack-org/HELPr#readme",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "dotenv": "^16.0.1",
+    "express": "^4.18.1",
+    "pg": "^8.7.3",
+    "socket.io": "^4.5.1",
+    "sqlite3": "^5.0.8"
+  }
+}
