@@ -1,6 +1,8 @@
+"use strict";
+
 console.log("Hello, helpR!")
 
-const dotenv = require("dotenv")
-dotenv.config()
+import { config as dotenv_config } from "dotenv"
+dotenv_config()
 
-const site = require("./site")
+import "./site.js"

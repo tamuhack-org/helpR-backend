@@ -1,9 +1,11 @@
-const express = require("express")
+"use strict";
+
+import express from "express"
 const app = express()
 const port = process.env.PORT || 3000
 
-const tickets = require("./tickets")
-const db = require("./database")
+import * as tickets from "./tickets.js"
+import * as db from "./database.js"
 
 
 app.use("/static", express.static("static"))
@@ -21,7 +23,6 @@ app.post("/tickets", (request, response) => {
 
 app.get("/tickets/active", (request, response) => {
     db.getActiveTickets((tickets) => {
-        console.log(tickets)
         response.json(tickets)
     })
 })

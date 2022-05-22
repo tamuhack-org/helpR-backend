@@ -1,14 +1,10 @@
-module.exports = {
-    putTicket,
-    contains,
-    getActiveTickets
-}
+"use strict";
 
-const sqlite3 = require("sqlite3").verbose()
+import sqlite3 from "sqlite3"
 let db = new sqlite3.Database("helpr.db")
 
 
-function putTicket (ticket, callback)
+export function putTicket (ticket, callback)
 {
     console.log(ticket)
 
@@ -19,7 +15,7 @@ function putTicket (ticket, callback)
     })    
 }
 
-function getActiveTickets (callback)
+export function getActiveTickets (callback)
 {
     db.serialize(() => {
         db.all("SELECT * FROM tickets WHERE time_claimed IS NULL", (error, rows) => {
@@ -28,7 +24,7 @@ function getActiveTickets (callback)
     }) 
 }
 
-function contains (table, column, value)
+export function contains (table, column, value)
 {
     // TODO return true if something exists in the database
     // something something SELECT * FROM table WHERE column = value
