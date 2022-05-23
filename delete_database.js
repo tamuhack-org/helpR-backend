@@ -1,2 +1,5 @@
-// TODO this
-// Also this file doesn't make sense for sqlite
+"use strict";
+
+import { AppDataSource } from "./database.js";
+await AppDataSource.initialize()
+await AppDataSource.dropDatabase()

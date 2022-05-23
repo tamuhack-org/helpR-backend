@@ -13,18 +13,15 @@ app.use(express.static("pages"))
 
 app.use(express.json())
 
-app.post("/tickets", (request, response) => {
-    let ticket = tickets.makeFromRequest(request)
-    db.putTicket(ticket, () =>
-    {
-        response.json({message: "Ticket submitted!"})
-    })
+app.post("/tickets", async (request, response) => {
+    const ticket = tickets.makeFromRequest(request)
+    await db.putTicket(ticket)
+    response.json({message: "Ticket submitted!"})
 })
 
-app.get("/tickets/active", (request, response) => {
-    db.getActiveTickets((tickets) => {
-        response.json(tickets)
-    })
+app.get("/tickets/active", async (request, response) => {
+    const activeTickets = await db.getActiveTickets()
+    response.json(activeTickets)
 })
 
 app.listen(port, () => {

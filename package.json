@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "live": "nodemon index.js",
-    "create_db": "node create_database.js",
+    "delete_db": "node delete_database.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -23,8 +23,10 @@
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "pg": "^8.7.3",
+    "reflect-metadata": "^0.1.13",
     "socket.io": "^4.5.1",
-    "sqlite3": "^5.0.8"
+    "sqlite3": "^5.0.8",
+    "typeorm": "^0.3.6"
   },
   "type": "module"
 }
