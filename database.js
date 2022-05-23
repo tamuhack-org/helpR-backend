@@ -3,13 +3,16 @@
 import "reflect-metadata"
 import { EntitySchema, DataSource } from "typeorm";
 
+import { config as dotenv_config } from "dotenv"
+dotenv_config()
+
 // Database entities
 
 const User = new EntitySchema ({
     name: "User",
     tableName: "users",
     columns: {
-        user_id: { type: "int", primary: true, generated: true },
+        user_id: { type: "integer", primary: true, generated: true },
         email: { type: "text" },
         name: { type: "text" },
         is_admin: { type: "boolean" },
@@ -23,9 +26,9 @@ const Ticket = new EntitySchema ({
     columns: {
         ticket_id: { type: "integer", primary: true, generated: true },
         user_id: { type: "integer" },  // TODO make this a relation to an actual User once authentication works
-        time_opened: { type: "integer" },
-        time_claimed: { type: "integer", nullable: true },
-        time_resolved: { type: "integer", nullable: true },
+        time_opened: { type: "bigint" },
+        time_claimed: { type: "bigint", nullable: true },
+        time_resolved: { type: "bigint", nullable: true },
         description: { type: "text" },
         location: { type: "text" },
         contact: { type: "text" },
@@ -38,8 +41,9 @@ const Ticket = new EntitySchema ({
 // Database DataSource
 
 export const AppDataSource = new DataSource({
-    type: "sqlite",
-    database: "helpr.db",
+    type: "postgres",
+    url: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
     entities: [User, Ticket],
     synchronize: true
 })
