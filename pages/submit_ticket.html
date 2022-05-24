@@ -11,6 +11,7 @@
 <body>
     <h1>Submit a HELPr Ticket</h1>
     <form autocomplete="off">
+        <!-- TODO complain if any of these are longer than 200 characters -->
         <label for="ticket-description">Description:</label>
         <input id="ticket-description" name="ticket-description" type="text" maxlength="50"><br><br>
         <label for="ticket-location">Location:</label>
@@ -19,43 +20,41 @@
         <input id="ticket-contact" name="ticket-contact" type="text" maxlength="50"><br><br>
     </form>
     <button onclick="submit()">Submit</button>
-    <p id="message"></p>
+    <p id="ticket-response-message"></p>
 
     <script>
-        let tDescription = document.getElementById("ticket-description")
-        let tLocation = document.getElementById("ticket-location")
-        let tContact = document.getElementById("ticket-contact")
-        let message = document.getElementById("message")
+        const ticket_description = document.getElementById("ticket-description")
+        const ticket_location = document.getElementById("ticket-location")
+        const ticket_contact = document.getElementById("ticket-contact")
+        const ticket_response_message = document.getElementById("ticket-response-message")
 
-        function submit ()
+        async function submit ()
         {
-            if (tDescription.value === "")
+            if (ticket_description.value === "")
             {
-                message.innerText = "Please include a description!"
+                ticket_response_message.innerText = "Please include a description!"
             }
-            else if (tLocation.value === "")
+            else if (ticket_location.value === "")
             {
-                message.innerText = "Please include a location!"
+                ticket_response_message.innerText = "Please include a location!"
             }
             else
             {
                 let ticket = {
-                    $description: tDescription.value,
-                    $location: tLocation.value,
-                    $contact: tContact.value
+                    description: ticket_description.value,
+                    location: ticket_location.value,
+                    contact: ticket_contact.value
                 }
 
-                fetch("/tickets", {
+                const response = await fetch("/tickets", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify(ticket)
                 })
-                .then(response => response.json())
-                .then(data => {
-                    message.innerText = data.message
-                })
+                const response_json = await response.json()
+                ticket_response_message.innerText = response_json.message
             }
         }
     </script>

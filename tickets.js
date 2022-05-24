@@ -2,30 +2,30 @@
 
 export function makeFromRequest(request)
 {
-    let ticket = request.body
-    // TODO complain if there isn't a $description, $location, and $contact
-    // TODO complain if description, location, or contact are too long (>50 characters)
+    const ticket_request = request.body
 
-    // TODO replace with actual functionality; this is for debugging purposes
-    ticket.$userId = 12345
+    if (ticket_request.description && typeof ticket_request.description === "string" && ticket_request.description.length <= 200 &&
+        ticket_request.location && typeof ticket_request.location === "string" && ticket_request.location.length <= 200 &&
+        ticket_request.contact && typeof ticket_request.contact === "string" && ticket_request.contact.length <= 200)
+    {
+        // TODO replace this with actual functionality once authentication works
+        const temp_userId = 12345
 
-    ticket.$timeOpened = Date.now()
+        const ticket_object = {
+            user_id: temp_userId,
+            time_opened: Date.now(),
+            time_claimed: null,
+            time_resolved: null,
+            description: ticket_request.description,
+            location: ticket_request.location,
+            contact: ticket_request.contact,
+            claimant_user_id: null,
+            review_description: null,
+            review_stars: null
+        }
 
-
-    // TODO this whole thing is redundant, remake this function once ORM is working
-
-    const ticket_object = {
-        user_id: ticket.$userId,
-        time_opened: ticket.$timeOpened,
-        time_claimed: null,
-        time_resolved: null,
-        description: ticket.$description,
-        location: ticket.$location,
-        contact: ticket.$contact,
-        claimant_user_id: null,
-        review_description: null,
-        review_stars: null
+        return ticket_object
     }
-
-    return ticket_object
+    
+    return null
 }

@@ -19,22 +19,20 @@
     <p id="message"></p>
 
     <script>
-        function getTickets()
+        async function getTickets()
         {
-            fetch("/tickets/active", {
+            const response = await fetch("/tickets/active", {
                 method: "GET"
             })
-            .then(response => response.json())
-            .then(data => {
-                for (let ticket of data)
-                {
-                    let ticketP = document.createElement("P")
-                    ticketP.innerText = JSON.stringify(ticket)
-                    document.body.appendChild(ticketP)
-                    document.body.appendChild(document.createElement("BR"))
-                }
-            })
-        }
+            const response_json = await response.json()
+            for (let ticket of response_json)
+            {
+                const ticketP = document.createElement("P")
+                ticketP.innerText = JSON.stringify(ticket)
+                document.body.appendChild(ticketP)
+                document.body.appendChild(document.createElement("BR"))
+            }
+    }
     </script>
 </body>
 </html>
