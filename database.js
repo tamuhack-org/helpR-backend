@@ -1,18 +1,18 @@
 "use strict";
 
-import "reflect-metadata"
+import "reflect-metadata";
 import { EntitySchema, DataSource } from "typeorm";
 
-import { config as dotenv_config } from "dotenv"
-dotenv_config()
+import { config as dotenv_config } from "dotenv";
+dotenv_config();
 
-import pg from "pg"
+import pg from "pg";
 export const pgPool = new pg.Pool({  // Only use this when absolutely needed, use TypeORM otherwise
     connectionString: process.env.DATABASE_URL,
     ssl: {
         rejectUnauthorized: false
     }
-})
+});
 
 // Database entities
 
@@ -26,7 +26,7 @@ const User = new EntitySchema ({
         opened_tickets: { type: "integer", array: true },
         resolved_tickets: { type: "integer", array: true }
     }
-})
+});
 
 const Ticket = new EntitySchema ({
     name: "Ticket",
@@ -44,7 +44,7 @@ const Ticket = new EntitySchema ({
         review_description: { type: "text", nullable: true },
         review_stars: { type: "integer", nullable: true }
     }
-})
+});
 
 const Credentials = new EntitySchema ({
     name: "Credentials",
@@ -55,7 +55,7 @@ const Credentials = new EntitySchema ({
         provider: { type: "text" },
         subject: { type: "text", unique: true  }
     }
-})
+});
 
 const Session = new EntitySchema ({  // Based on table.sql from connect-pg-simple
     name: "Session",
@@ -65,7 +65,7 @@ const Session = new EntitySchema ({  // Based on table.sql from connect-pg-simpl
         sess: { type: "json" },
         expire: { type: "timestamp", precision: 6,  }
     }
-})
+});
 
 // Database DataSource
 
@@ -75,27 +75,27 @@ export const AppDataSource = new DataSource({
     ssl: { rejectUnauthorized: false },
     entities: [User, Ticket, Credentials, Session],
     synchronize: true
-})
+});
 
-export const userRepository = AppDataSource.getRepository(User)
-export const ticketRepository = AppDataSource.getRepository(Ticket)
-export const credentialsRepository = AppDataSource.getRepository(Credentials)
+export const userRepository = AppDataSource.getRepository(User);
+export const ticketRepository = AppDataSource.getRepository(Ticket);
+export const credentialsRepository = AppDataSource.getRepository(Credentials);
 
 // Functions
 
 export async function initializeDatabase ()
 {
-    await AppDataSource.initialize()
-    await AppDataSource.query('CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire")')
+    await AppDataSource.initialize();
+    await AppDataSource.query('CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire")');
 }
 
 export async function putTicket (ticket)
 {
-    await ticketRepository.save(ticket)
+    await ticketRepository.save(ticket);
 }
 
 export async function getActiveTickets ()
 {
-    const activeTickets = await ticketRepository.findBy({ time_claimed: null })
-    return activeTickets
+    const activeTickets = await ticketRepository.findBy({ time_claimed: null });
+    return activeTickets;
 }

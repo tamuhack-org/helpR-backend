@@ -19,9 +19,9 @@
     <script>
         async function logout ()
         {
-            const response = await fetch("/logout", { method: "POST" })
-            const response_json = await response.json()
-            window.alert(response_json.message)
+            const response = await fetch("/logout", { method: "POST" });
+            const response_json = await response.json();
+            window.alert(response_json.message);
         }
     </script>
 </body>

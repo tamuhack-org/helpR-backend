@@ -23,28 +23,28 @@
     <p id="ticket-response-message"></p>
 
     <script>
-        const ticket_description = document.getElementById("ticket-description")
-        const ticket_location = document.getElementById("ticket-location")
-        const ticket_contact = document.getElementById("ticket-contact")
-        const ticket_response_message = document.getElementById("ticket-response-message")
+        const ticket_description = document.getElementById("ticket-description");
+        const ticket_location = document.getElementById("ticket-location");
+        const ticket_contact = document.getElementById("ticket-contact");
+        const ticket_response_message = document.getElementById("ticket-response-message");
 
         async function submit ()
         {
             if (ticket_description.value === "")
             {
-                ticket_response_message.innerText = "Please include a description!"
+                ticket_response_message.innerText = "Please include a description!";
             }
             else if (ticket_location.value === "")
             {
-                ticket_response_message.innerText = "Please include a location!"
+                ticket_response_message.innerText = "Please include a location!";
             }
             else
             {
-                let ticket = {
+                const ticket = {
                     description: ticket_description.value,
                     location: ticket_location.value,
                     contact: ticket_contact.value
-                }
+                };
 
                 const response = await fetch("/tickets", {
                     method: "POST",
@@ -52,9 +52,9 @@
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify(ticket)
-                })
-                const response_json = await response.json()
-                ticket_response_message.innerText = response_json.message
+                });
+                const response_json = await response.json();
+                ticket_response_message.innerText = response_json.message;
             }
         }
     </script>

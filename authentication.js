@@ -1,9 +1,9 @@
 "use strict";
 
-import passport from "passport"
-import GoogleStrategy from "passport-google-oidc"
+import passport from "passport";
+import GoogleStrategy from "passport-google-oidc";
 
-import { userRepository, credentialsRepository } from "./database.js"
+import { userRepository, credentialsRepository } from "./database.js";
 
 passport.use(new GoogleStrategy(
     {
@@ -14,7 +14,7 @@ passport.use(new GoogleStrategy(
     },
     async function verify (issuer, profile, callback)
     {
-        const existingCredentials = await credentialsRepository.findBy({ provider: issuer, subject: profile.id })
+        const existingCredentials = await credentialsRepository.findBy({ provider: issuer, subject: profile.id });
         if (existingCredentials.length == 0)  // If credentials do not exist
         {
             const newUser = {
@@ -22,44 +22,44 @@ passport.use(new GoogleStrategy(
                 is_admin: false,
                 opened_tickets: [],
                 resolved_tickets: []
-            }
-            const newUserEntry = await userRepository.save(newUser)
+            };
+            const newUserEntry = await userRepository.save(newUser);
 
-            const id = newUserEntry.user_id
+            const id = newUserEntry.user_id;
             const newCredentials = {
                 user_id: id,
                 provider: issuer,
                 subject: profile.id
-            }
-            await credentialsRepository.save(newCredentials)
+            };
+            await credentialsRepository.save(newCredentials);
 
             const returnUser = {
                 id: id,
                 name: profile.displayName
-            }
-            return callback(null, returnUser)
+            };
+            return callback(null, returnUser);
         }
         else  // If credentials exist
         {
-            const user = await userRepository.findBy({ user_id: existingCredentials[0].user_id })
+            const user = await userRepository.findBy({ user_id: existingCredentials[0].user_id });
             if (user.length == 0)  // If user does not exist
             {
-                return callback(null, false)
+                return callback(null, false);
             }
             // If user does exist
-            return callback(null, user[0])
+            return callback(null, user[0]);
         }
     }
 ))
 
 passport.serializeUser((user, callback) => {
     process.nextTick(() => {
-        callback(null, { id: user.id, username: user.username, name: user.name })
-    })
-})
+        callback(null, { id: user.id, username: user.username, name: user.name });
+    });
+});
 
 passport.deserializeUser((user, callback) => {
     process.nextTick(() => {
-        return callback(null, user)
-    })
-})
+        return callback(null, user);
+    });
+});
