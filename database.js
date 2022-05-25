@@ -6,6 +6,14 @@ import { EntitySchema, DataSource } from "typeorm";
 import { config as dotenv_config } from "dotenv"
 dotenv_config()
 
+import pg from "pg"
+export const pgPool = new pg.Pool({  // Only use this when absolutely needed, use TypeORM otherwise
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+})
+
 // Database entities
 
 const User = new EntitySchema ({
@@ -13,10 +21,10 @@ const User = new EntitySchema ({
     tableName: "users",
     columns: {
         user_id: { type: "integer", primary: true, generated: true },
-        email: { type: "text" },
         name: { type: "text" },
         is_admin: { type: "boolean" },
-        resolved_tickets: { type: "text" }
+        opened_tickets: { type: "integer", array: true },
+        resolved_tickets: { type: "integer", array: true }
     }
 })
 
@@ -38,20 +46,48 @@ const Ticket = new EntitySchema ({
     }
 })
 
+const Credentials = new EntitySchema ({
+    name: "Credentials",
+    tableName: "credentials",
+    columns: {
+        id: { type: "integer", primary: true, generated: true },
+        user_id: { type: "integer" },
+        provider: { type: "text" },
+        subject: { type: "text", unique: true  }
+    }
+})
+
+const Session = new EntitySchema ({  // Based on table.sql from connect-pg-simple
+    name: "Session",
+    tableName: "session",
+    columns: {
+        sid: { type: "text", primary: true, collation: "default" },
+        sess: { type: "json" },
+        expire: { type: "timestamp", precision: 6,  }
+    }
+})
+
 // Database DataSource
 
 export const AppDataSource = new DataSource({
     type: "postgres",
     url: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
-    entities: [User, Ticket],
+    entities: [User, Ticket, Credentials, Session],
     synchronize: true
 })
 
-const userRepository = AppDataSource.getRepository(User)
-const ticketRepository = AppDataSource.getRepository(Ticket)
+export const userRepository = AppDataSource.getRepository(User)
+export const ticketRepository = AppDataSource.getRepository(Ticket)
+export const credentialsRepository = AppDataSource.getRepository(Credentials)
 
 // Functions
+
+export async function initializeDatabase ()
+{
+    await AppDataSource.initialize()
+    await AppDataSource.query('CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire")')
+}
 
 export async function putTicket (ticket)
 {
