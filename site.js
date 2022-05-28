@@ -16,6 +16,7 @@ import "./authentication.js";
 
 app.use("/static", express.static("static"));  // Static files will be under static/
 app.use(express.static("pages"));  // Pages will be under root
+app.use("/testing", express.static("pages_testing"));  // Testing pages will be under root
 
 app.use(express.json());
 
