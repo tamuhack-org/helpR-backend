@@ -99,3 +99,9 @@ export async function getActiveTickets ()
     const activeTickets = await ticketRepository.findBy({ time_claimed: null });
     return activeTickets;
 }
+
+export async function getUser (user_id)
+{
+    const user = await userRepository.findOneBy({ user_id: user_id });
+    return user;
+}

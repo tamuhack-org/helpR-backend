@@ -8,13 +8,14 @@
 
     <title>HELPr</title>
 </head>
-<body>
+<body onload="displayCurrentUser()">
     <h1>HELPr</h1>
+    <h2 id="logged-in-as"></h2>
     <p><a href="submit_ticket.html">DEBUG: Submit a ticket</a></p>
     <p><a href="view_tickets.html">DEBUG: View tickets</a></p>
     <p><a href="login.html">DEBUG: Log in</a></p>
     <p><a href="#" onclick="logout()">DEBUG: Log out</a></p>
-    <p><a href="/whoami">DEBUG: Who am I</a></p>
+    <p><a href="/users/me">DEBUG: Who am I</a></p>
 
     <script>
         async function logout ()
@@ -22,6 +23,22 @@
             const response = await fetch("/logout", { method: "POST" });
             const response_json = await response.json();
             window.alert(response_json.message);
+            await displayCurrentUser()
+        }
+
+        async function displayCurrentUser ()
+        {
+            const loggedInAs = document.getElementById("logged-in-as");
+            const response = await fetch("/users/me", { method: "GET" });
+            const currentUser = await response.json();
+            if (currentUser)
+            {
+                loggedInAs.innerText = "Logged in as " + currentUser.name
+            }
+            else
+            {
+                loggedInAs.innerText = "Not logged in"
+            }
         }
     </script>
 </body>

@@ -14,8 +14,8 @@ passport.use(new GoogleStrategy(
     },
     async function verify (issuer, profile, callback)
     {
-        const existingCredentials = await credentialsRepository.findBy({ provider: issuer, subject: profile.id });
-        if (existingCredentials.length == 0)  // If credentials do not exist
+        const existingCredentials = await credentialsRepository.findOneBy({ provider: issuer, subject: profile.id });
+        if (!existingCredentials)  // If credentials do not exist
         {
             const newUser = {
                 name: profile.displayName,
@@ -33,33 +33,30 @@ passport.use(new GoogleStrategy(
             };
             await credentialsRepository.save(newCredentials);
 
-            const returnUser = {
-                id: id,
-                name: profile.displayName
-            };
-            return callback(null, returnUser);
+            return callback(null, id);
         }
         else  // If credentials exist
         {
-            const user = await userRepository.findBy({ user_id: existingCredentials[0].user_id });
-            if (user.length == 0)  // If user does not exist
+            const user = await userRepository.findOneBy({ user_id: existingCredentials.user_id });
+            if (!user)  // If user does not exist
             {
                 return callback(null, false);
             }
             // If user does exist
-            return callback(null, user[0]);
+            return callback(null, user.user_id);
         }
     }
 ))
 
-passport.serializeUser((user, callback) => {
+passport.serializeUser((user_id, callback) => {
     process.nextTick(() => {
-        callback(null, { id: user.id, username: user.username, name: user.name });
+        callback(null, user_id);
     });
 });
 
-passport.deserializeUser((user, callback) => {
-    process.nextTick(() => {
+passport.deserializeUser((user_id, callback) => {
+    process.nextTick(async () => {
+        const user = await userRepository.findOneBy({ user_id: user_id });
         return callback(null, user);
     });
 });
