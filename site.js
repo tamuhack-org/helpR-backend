@@ -32,19 +32,23 @@ app.use(session({
 
 // Request handling
 
+// Log a user in with google
 app.get("/login/google", passport.authenticate("google"));
 
+// Log a user in with google (used by Passport.js)
 app.get("/oauth2/redirect/google", passport.authenticate("google", {
     successRedirect: "/",
     failureRedirect: "/login.html"
 }));
 
+// Log out
 app.post("/logout", async (request, response) => {
     request.logout(() => {
         response.send({ message: "logged out!" });
     });
 });
 
+// Post a new ticket
 app.post("/tickets", async (request, response) => {
     const ticket = tickets.makeFromRequest(request);
     if (ticket == null)
@@ -58,14 +62,35 @@ app.post("/tickets", async (request, response) => {
     }
 });
 
+// Get all active tickets
 app.get("/tickets/active", async (request, response) => {
     const activeTickets = await db.getActiveTickets();
     response.json(activeTickets);
 });
 
-// TODO this is just for testing
-app.get("/whoami", (request, response) => {
-    response.send("<p>" + JSON.stringify(request.session.passport) + "</p>");
+// Get a specific ticket
+app.get("/tickets/:ticket_id(\\d+)", (request, response) => {
+    // TODO implement this
+    response.send("<h1>TODO</h2> <p>" + JSON.stringify(request.params) + "</p>");
+});
+
+// Get the currently logged in user
+app.get("/users/me", async (request, response) => {
+    if (request.session.passport)
+    {
+        const user = await db.getUser(request.session.passport.user);
+        response.json(user);
+    }
+    else
+    {
+        response.json(null);
+    }
+});
+
+// Get a specific user
+app.get("/users/:user_id(\\d+)", async (request, response) => {
+    const user = await db.getUser(request.params.user_id);
+    response.json(user);
 });
 
 app.listen(port, () => {
