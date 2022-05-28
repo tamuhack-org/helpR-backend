@@ -21,8 +21,7 @@ passport.use(new GoogleStrategy(
                 name: profile.displayName,
                 is_admin: false,
                 is_silenced: false,
-                opened_tickets: [],
-                resolved_tickets: []
+                time_created: () => "CURRENT_TIMESTAMP"
             };
             const newUserEntry = await userRepository.save(newUser);
 

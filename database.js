@@ -23,7 +23,8 @@ const User = new EntitySchema ({
         user_id: { type: "uuid", primary: true, generated: "uuid" },
         name: { type: "text" },
         is_admin: { type: "boolean" },
-        is_silenced: { type: "boolean" }
+        is_silenced: { type: "boolean" },
+        time_created: { type: "timestamp with time zone" }
     },
     relations: {
         opened_tickets: {
@@ -44,9 +45,9 @@ const Ticket = new EntitySchema ({
     tableName: "tickets",
     columns: {
         ticket_id: { type: "uuid", primary: true, generated: "uuid" },
-        time_opened: { type: "bigint" },
-        time_claimed: { type: "bigint", nullable: true },
-        time_resolved: { type: "bigint", nullable: true },
+        time_opened: { type: "timestamp with time zone" },
+        time_claimed: { type: "timestamp with time zone", nullable: true },
+        time_resolved: { type: "timestamp with time zone", nullable: true },
         description: { type: "text" },
         location: { type: "text" },
         contact: { type: "text" },

@@ -11,7 +11,7 @@ export function makeFromRequest(request, author)
     {
 
         const ticket_object = {
-            time_opened: Date.now(),
+            time_opened: () => "CURRENT_TIMESTAMP",
             time_claimed: null,
             time_resolved: null,
             description: ticket_request.description,
