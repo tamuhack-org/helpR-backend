@@ -20,11 +20,11 @@ const User = new EntitySchema ({
     name: "User",
     tableName: "users",
     columns: {
-        user_id: { type: "integer", primary: true, generated: true },
+        user_id: { type: "uuid", primary: true, generated: "uuid" },
         name: { type: "text" },
         is_admin: { type: "boolean" },
-        opened_tickets: { type: "integer", array: true },
-        resolved_tickets: { type: "integer", array: true }
+        opened_tickets: { type: "uuid", array: true }, // TODO make these relationa to an actual Tickets once authentication works
+        resolved_tickets: { type: "uuid", array: true }
     }
 });
 
@@ -32,8 +32,8 @@ const Ticket = new EntitySchema ({
     name: "Ticket",
     tableName: "tickets",
     columns: {
-        ticket_id: { type: "integer", primary: true, generated: true },
-        user_id: { type: "integer" },  // TODO make this a relation to an actual User once authentication works
+        ticket_id: { type: "uuid", primary: true, generated: "uuid" },
+        user_id: { type: "uuid" },  // TODO make this a relation to an actual User once authentication works
         time_opened: { type: "bigint" },
         time_claimed: { type: "bigint", nullable: true },
         time_resolved: { type: "bigint", nullable: true },
@@ -50,8 +50,8 @@ const Credentials = new EntitySchema ({
     name: "Credentials",
     tableName: "credentials",
     columns: {
-        id: { type: "integer", primary: true, generated: true },
-        user_id: { type: "integer" },
+        id: { type: "uuid", primary: true, generated: "uuid" },
+        user_id: { type: "uuid" },
         provider: { type: "text" },
         subject: { type: "text", unique: true  }
     }
@@ -94,10 +94,28 @@ export async function putTicket (ticket)
     await ticketRepository.save(ticket);
 }
 
+export async function getAllTickets ()
+{
+    const allTickets = await ticketRepository.find();
+    return allTickets;
+}
+
 export async function getActiveTickets ()
 {
     const activeTickets = await ticketRepository.findBy({ time_claimed: null });
     return activeTickets;
+}
+
+export async function getTicket (ticket_id)
+{
+    const ticket = await ticketRepository.findOneBy({ ticket_id: ticket_id });
+    return ticket;
+}
+
+export async function getAllUsers ()
+{
+    const allUsers = await userRepository.find();
+    return allUsers;
 }
 
 export async function getUser (user_id)

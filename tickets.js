@@ -9,7 +9,7 @@ export function makeFromRequest(request)
         ticket_request.contact && typeof ticket_request.contact === "string" && ticket_request.contact.length <= 200)
     {
         // TODO replace this with actual functionality once authentication works
-        const temp_userId = 12345;
+        const temp_userId = "00000000-0000-0000-0000-000000000000";
 
         const ticket_object = {
             user_id: temp_userId,
