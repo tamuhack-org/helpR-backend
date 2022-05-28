@@ -51,16 +51,39 @@ app.post("/logout", async (request, response) => {
 
 // Post a new ticket
 app.post("/tickets", async (request, response) => {
-    const ticket = tickets.makeFromRequest(request);
-    if (ticket == null)
+    if (request.session.passport)
     {
-        response.json({ message: "Invalid data!" });
+        const author = await db.getUser(request.session.passport.user);
+        const ticket = tickets.makeFromRequest(request, author);
+        if (ticket)
+        {
+            await db.putTicket(ticket, author);
+            response.json({message: "Ticket submitted!"});
+        }
+        else
+        {
+            response.json({ message: "Invalid data!" });
+        }
     }
     else
     {
-        await db.putTicket(ticket);
-        response.json({message: "Ticket submitted!"});
+        response.sendStatus(401);
     }
+});
+
+// Get all tickets (admins only)
+app.get("/tickets/all", async (request, response) => {
+    if (request.session.passport)
+    {
+        const user = await db.getUser(request.session.passport.user);
+        if (user.is_admin)
+        {
+            const allTickets = await db.getAllTickets();
+            response.json(allTickets);
+            return;
+        }
+    }
+    response.sendStatus(403);
 });
 
 // Get all active tickets
@@ -70,9 +93,24 @@ app.get("/tickets/active", async (request, response) => {
 });
 
 // Get a specific ticket
-app.get("/tickets/:ticket_id(\\d+)", (request, response) => {
-    // TODO implement this
-    response.send("<h1>TODO</h2> <p>" + JSON.stringify(request.params) + "</p>");
+app.get("/tickets/:ticket_id([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", async (request, response) => {
+    const user = await db.getTicket(request.params.ticket_id);
+    response.json(user);
+});
+
+// Get all users (admins only)
+app.get("/users/all", async (request, response) => {
+    if (request.session.passport)
+    {
+        const user = await db.getUser(request.session.passport.user);
+        if (user && user.is_admin)
+        {
+            const allUsers = await db.getAllUsers();
+            response.json(allUsers);
+            return;
+        }
+    }
+    response.sendStatus(403);
 });
 
 // Get the currently logged in user
@@ -89,7 +127,7 @@ app.get("/users/me", async (request, response) => {
 });
 
 // Get a specific user
-app.get("/users/:user_id(\\d+)", async (request, response) => {
+app.get("/users/:user_id([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", async (request, response) => {
     const user = await db.getUser(request.params.user_id);
     response.json(user);
 });

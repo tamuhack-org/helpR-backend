@@ -20,11 +20,23 @@ const User = new EntitySchema ({
     name: "User",
     tableName: "users",
     columns: {
-        user_id: { type: "integer", primary: true, generated: true },
+        user_id: { type: "uuid", primary: true, generated: "uuid" },
         name: { type: "text" },
         is_admin: { type: "boolean" },
-        opened_tickets: { type: "integer", array: true },
-        resolved_tickets: { type: "integer", array: true }
+        is_silenced: { type: "boolean" },
+        time_created: { type: "timestamp with time zone" }
+    },
+    relations: {
+        opened_tickets: {
+            target: "Ticket",
+            type: "one-to-many",
+            inverseSide: "author"
+        },
+        claimed_tickets: {
+            target: "Ticket",
+            type: "one-to-many",
+            inverseSide: "claimant"
+        }
     }
 });
 
@@ -32,17 +44,26 @@ const Ticket = new EntitySchema ({
     name: "Ticket",
     tableName: "tickets",
     columns: {
-        ticket_id: { type: "integer", primary: true, generated: true },
-        user_id: { type: "integer" },  // TODO make this a relation to an actual User once authentication works
-        time_opened: { type: "bigint" },
-        time_claimed: { type: "bigint", nullable: true },
-        time_resolved: { type: "bigint", nullable: true },
+        ticket_id: { type: "uuid", primary: true, generated: "uuid" },
+        time_opened: { type: "timestamp with time zone" },
+        time_claimed: { type: "timestamp with time zone", nullable: true },
+        time_resolved: { type: "timestamp with time zone", nullable: true },
         description: { type: "text" },
         location: { type: "text" },
         contact: { type: "text" },
-        claimant_user_id: { type: "integer", nullable: true },
         review_description: { type: "text", nullable: true },
         review_stars: { type: "integer", nullable: true }
+    },
+    relations: {
+        author: {
+            target: "User",
+            type: "many-to-one"
+        },
+        claimant: {
+            target: "User",
+            type: "many-to-one",
+            nullable: true
+        }
     }
 });
 
@@ -50,8 +71,8 @@ const Credentials = new EntitySchema ({
     name: "Credentials",
     tableName: "credentials",
     columns: {
-        id: { type: "integer", primary: true, generated: true },
-        user_id: { type: "integer" },
+        id: { type: "uuid", primary: true, generated: "uuid" },
+        user_id: { type: "uuid" },
         provider: { type: "text" },
         subject: { type: "text", unique: true  }
     }
@@ -63,7 +84,7 @@ const Session = new EntitySchema ({  // Based on table.sql from connect-pg-simpl
     columns: {
         sid: { type: "text", primary: true, collation: "default" },
         sess: { type: "json" },
-        expire: { type: "timestamp", precision: 6,  }
+        expire: { type: "timestamp", precision: 6 }
     }
 });
 
@@ -89,19 +110,73 @@ export async function initializeDatabase ()
     await AppDataSource.query('CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire")');
 }
 
-export async function putTicket (ticket)
+export async function putTicket (ticket, author)
 {
+    author.opened_tickets.push(ticket);
+    await userRepository.save(author);
     await ticketRepository.save(ticket);
+}
+
+export async function getAllTickets ()
+{
+    const allTickets = await ticketRepository.find({
+        relations: {
+            author: true,
+            claimant: true
+        }
+    });
+    return allTickets;
 }
 
 export async function getActiveTickets ()
 {
-    const activeTickets = await ticketRepository.findBy({ time_claimed: null });
+    const activeTickets = await ticketRepository.find({
+        where: {
+            time_claimed: null
+        },
+        relations: {
+            author: true,
+            claimant: true
+        }
+    });
     return activeTickets;
+}
+
+export async function getTicket (ticket_id)
+{
+    const ticket = await ticketRepository.findOne({
+        where: {
+            ticket_id: ticket_id
+        },
+        relations: {
+            author: true,
+            claimant: true
+        }
+    });
+    return ticket;
+}
+
+export async function getAllUsers ()
+{
+    const allUsers = await userRepository.find({
+        relations: {
+            opened_tickets: true,
+            claimed_tickets: true
+        }
+    });
+    return allUsers;
 }
 
 export async function getUser (user_id)
 {
-    const user = await userRepository.findOneBy({ user_id: user_id });
+    const user = await userRepository.findOne({
+        where: {
+            user_id: user_id
+        },
+        relations: {
+            opened_tickets: true,
+            claimed_tickets: true
+        }
+    });
     return user;
 }
