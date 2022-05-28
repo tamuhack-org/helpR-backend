@@ -50,17 +50,24 @@ app.post("/logout", async (request, response) => {
 });
 
 // Post a new ticket
-// TODO make this only work for logged-in users
 app.post("/tickets", async (request, response) => {
-    const ticket = tickets.makeFromRequest(request);
-    if (ticket)
+    if (request.session.passport)
     {
-        await db.putTicket(ticket);
-        response.json({message: "Ticket submitted!"});
+        const author = await db.getUser(request.session.passport.user);
+        const ticket = tickets.makeFromRequest(request, author);
+        if (ticket)
+        {
+            await db.putTicket(ticket, author);
+            response.json({message: "Ticket submitted!"});
+        }
+        else
+        {
+            response.json({ message: "Invalid data!" });
+        }
     }
     else
     {
-        response.json({ message: "Invalid data!" });
+        response.sendStatus(401);
     }
 });
 
@@ -69,7 +76,7 @@ app.get("/tickets/all", async (request, response) => {
     if (request.session.passport)
     {
         const user = await db.getUser(request.session.passport.user);
-        if (user && user.is_admin)
+        if (user.is_admin)
         {
             const allTickets = await db.getAllTickets();
             response.json(allTickets);

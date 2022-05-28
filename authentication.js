@@ -20,6 +20,7 @@ passport.use(new GoogleStrategy(
             const newUser = {
                 name: profile.displayName,
                 is_admin: false,
+                is_silenced: false,
                 opened_tickets: [],
                 resolved_tickets: []
             };
