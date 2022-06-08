@@ -2,8 +2,16 @@
 
 import express from "express";
 import session from "express-session";
+import { createServer } from "http";
 const app = express();
+const server = createServer(app);
 const port = process.env.PORT || 3000;
+
+import { Server } from "socket.io";
+const socket_io = new Server(server);
+const sioMessages = {
+    ticketsUpdated: "tickets updated"
+};
 
 import connectPgSimple from "connect-pg-simple";
 const PostgresStore = connectPgSimple(session);
@@ -58,6 +66,7 @@ app.post("/tickets", async (request, response) => {
         if (ticket)
         {
             await db.putTicket(ticket, author);
+            socket_io.emit(sioMessages.ticketsUpdated);
             response.json({message: "Ticket submitted!"});
         }
         else
@@ -132,6 +141,11 @@ app.get("/users/:user_id([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f
     response.json(user);
 });
 
-app.listen(port, () => {
+// TODO this is temporary, delete this later
+// socket_io.on("connection", (socket) => {
+//     console.log("user " + socket.id + "connected");
+// });
+
+server.listen(port, () => {
     console.log("Listening on port " + port);
 });
