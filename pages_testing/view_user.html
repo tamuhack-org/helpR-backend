@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css">
+
+    <style>
+        p {
+            word-break: break-all;
+        }
+    </style>
+
+    <title>HELPr</title>
+</head>
+<body onload="fetchUser()">
+    <h1 id="title"></h1>
+    <div id="user-display">
+        <h2>Name</h2>
+        <p id="name"></p>
+        <h2>Is Admin</h2>
+        <p id="is-admin"></p>
+        <h2>Tickets Opened</h2>
+        <p id="tickets-opened"></p>
+        <h2>Tickets Claimed</h2>
+        <p id="tickets-claimed"></p>
+        <h2>JSON</h2>
+        <p id="json"></p>
+    </div>
+
+    <script src="/static/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        let userDisplay = document.getElementById("user-display");
+
+        socket.on("tickets updated", () => {
+            fetchUser();
+        });
+
+        async function fetchUser()
+        {
+            if (window.location.toString().split("?").length < 2)
+            {
+                return;
+            }
+            const userID = window.location.toString().split("?")[1];
+            const response = await fetch("/users/" + userID, { method: "GET" });
+            const responseJSON = await response.json();
+            displayTicket(responseJSON);
+        }
+
+        function displayTicket(userJSON)
+        {
+            if (!userJSON)
+            {
+                document.getElementById("title").innerText = "User Not Found";
+                return;
+            }
+
+            document.getElementById("title").innerText = "View User " + userJSON.user_id;
+            document.getElementById("name").innerText = userJSON.name;
+            document.getElementById("is-admin").innerText = userJSON.is_admin;
+
+            for (let ticket of userJSON.opened_tickets)
+            {
+                const ticketP = document.createElement("P");
+                const ticketLink = document.createElement("A");
+                ticketLink.href = "/view_ticket.html?" + ticket.ticket_id;
+                ticketLink.innerText = ticket.ticket_id;
+                ticketP.appendChild(ticketLink);
+                document.getElementById("tickets-opened").appendChild(ticketP);
+            }
+            
+            for (let ticket of userJSON.claimed_tickets)
+            {
+                const ticketP = document.createElement("P");
+                const ticketLink = document.createElement("A");
+                ticketLink.href = "/view_ticket.html?" + ticket.ticket_id;
+                ticketLink.innerText = ticket.ticket_id;
+                ticketP.appendChild(ticketLink);
+                document.getElementById("tickets-claimed").appendChild(ticketP);
+            }
+
+            document.getElementById("json").innerText = JSON.stringify(userJSON);
+        }
+    </script>
+</body>
+</html>

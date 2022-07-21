@@ -3,6 +3,7 @@
 import express from "express";
 import session from "express-session";
 import { createServer } from "http";
+import cors from "cors";
 const app = express();
 const server = createServer(app);
 const port = process.env.PORT || 3000;
@@ -22,9 +23,12 @@ import * as tickets from "./tickets.js";
 import * as db from "./database.js";
 import "./authentication.js";
 
+const uuid_regex = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+
 app.use("/static", express.static("static"));  // Static files will be under static/
-app.use(express.static("pages"));  // Pages will be under root
-app.use("/testing", express.static("pages_testing"));  // Testing pages will be under root
+app.use(express.static("pages_testing"));  // Testing pages will be under root
+
+app.use(cors());
 
 app.use(express.json());
 
@@ -102,7 +106,7 @@ app.get("/tickets/active", async (request, response) => {
 });
 
 // Get a specific ticket
-app.get("/tickets/:ticket_id([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", async (request, response) => {
+app.get("/tickets/:ticket_id(" + uuid_regex + ")", async (request, response) => {
     const user = await db.getTicket(request.params.ticket_id);
     response.json(user);
 });
@@ -136,7 +140,7 @@ app.get("/users/me", async (request, response) => {
 });
 
 // Get a specific user
-app.get("/users/:user_id([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", async (request, response) => {
+app.get("/users/:user_id(" + uuid_regex + ")", async (request, response) => {
     const user = await db.getUser(request.params.user_id);
     response.json(user);
 });

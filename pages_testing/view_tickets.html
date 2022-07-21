@@ -16,7 +16,6 @@
 </head>
 <body onload="fetchTickets()">
     <h1>View Open HELPr Tickets</h1>
-    <p id="message"></p>
     <div id="ticket-list"></div>
 
     <script src="/static/socket.io.min.js"></script>
@@ -45,8 +44,14 @@
 
             for (let ticket of ticketJSON)
             {
+                // Kids, never code like this
                 const ticketP = document.createElement("P");
                 ticketP.innerText = JSON.stringify(ticket);
+                const ticketLink = document.createElement("A");
+                ticketLink.href = "/view_ticket.html?" + ticket.ticket_id;
+                ticketLink.innerText = "[View Ticket] ";
+                ticketP.appendChild(ticketLink);
+
                 ticketList.appendChild(ticketP);
                 ticketList.appendChild(document.createElement("BR"));
             }
