@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css">
+
+    <style>
+        p {
+            word-break: break-all;
+        }
+    </style>
+
+    <title>HELPr</title>
+</head>
+<body onload="fetchTicket()">
+    <h1 id="title"></h1>
+    <div id="ticket-display">
+        <h2>Description</h2>
+        <p id="description"></p>
+        <h2>Location</h2>
+        <p id="location"></p>
+        <h2>Contact</h2>
+        <p id="contact"></p>
+        <h2>Author</h2>
+        <p id="author"></p>
+        <h2>JSON</h2>
+        <p id="json"></p>
+    </div>
+
+    <script src="/static/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        let ticketDisplay = document.getElementById("ticket-display");
+
+        socket.on("tickets updated", () => {
+            fetchTicket();
+        });
+
+        async function fetchTicket()
+        {
+            if (window.location.toString().split("?").length < 2)
+            {
+                return;
+            }
+            const ticketID = window.location.toString().split("?")[1];
+            const response = await fetch("/tickets/" + ticketID, { method: "GET" });
+            const responseJSON = await response.json();
+            displayTicket(responseJSON);
+        }
+
+        function displayTicket(ticketJSON)
+        {
+            if (!ticketJSON)
+            {
+                document.getElementById("title").innerText = "Ticket Not Found";
+                return;
+            }
+
+            document.getElementById("title").innerText = "View Ticket " + ticketJSON.ticket_id;
+            document.getElementById("description").innerText = ticketJSON.description;
+            document.getElementById("location").innerText = ticketJSON.location;
+            document.getElementById("contact").innerText = ticketJSON.contact;
+            document.getElementById("author").innerHTML = "<a href=\"/view_user.html?" + ticketJSON.author.user_id + "\">" + ticketJSON.author.name + "</a>";
+            document.getElementById("json").innerText = JSON.stringify(ticketJSON);
+        }
+    </script>
+</body>
+</html>

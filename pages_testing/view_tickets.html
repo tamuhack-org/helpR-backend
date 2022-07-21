@@ -14,21 +14,46 @@
 
     <title>HELPr</title>
 </head>
-<body onload="getTickets()">
+<body onload="fetchTickets()">
     <h1>View Open HELPr Tickets</h1>
-    <p id="message"></p>
+    <div id="ticket-list"></div>
 
+    <script src="/static/socket.io.min.js"></script>
     <script>
-        async function getTickets()
+        const socket = io();
+        let ticketList = document.getElementById("ticket-list");
+
+        socket.on("tickets updated", () => {
+            fetchTickets();
+        });
+
+        async function fetchTickets()
         {
             const response = await fetch("/tickets/active", { method: "GET" });
-            const response_json = await response.json();
-            for (let ticket of response_json)
+            const responseJSON = await response.json();
+            displayTickets(responseJSON);
+        }
+
+        function displayTickets(ticketJSON)
+        {
+            document.body.removeChild(ticketList);
+            ticketList = document.createElement("DIV");
+            ticketList.id = "ticket-list";
+            document.body.appendChild(ticketList);
+            
+
+            for (let ticket of ticketJSON)
             {
+                // Kids, never code like this
                 const ticketP = document.createElement("P");
                 ticketP.innerText = JSON.stringify(ticket);
-                document.body.appendChild(ticketP);
-                document.body.appendChild(document.createElement("BR"));
+                const ticketLink = document.createElement("A");
+                ticketLink.href = "/view_ticket.html?" + ticket.ticket_id;
+                ticketLink.innerText = "[View Ticket] ";
+                ticketP.appendChild(ticketLink);
+
+                ticketList.appendChild(ticketP);
+                ticketList.appendChild(document.createElement("BR"));
             }
         }
     </script>
