@@ -21,6 +21,7 @@ passport.use(new GoogleStrategy(
             const newUser = {
                 name: profile.displayName,
                 is_admin: false,
+                is_mentor: false,
                 is_silenced: false,
                 time_created: () => "CURRENT_TIMESTAMP"
             };

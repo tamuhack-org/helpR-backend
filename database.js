@@ -23,6 +23,7 @@ const User = new EntitySchema ({
         user_id: { type: "uuid", primary: true, generated: "uuid" },
         name: { type: "text" },
         is_admin: { type: "boolean" },
+        is_mentor: { type: "boolean" },
         is_silenced: { type: "boolean" },
         time_created: { type: "timestamp with time zone" }
     },

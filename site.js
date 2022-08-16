@@ -145,10 +145,62 @@ app.get("/users/:user_id(" + uuid_regex + ")", async (request, response) => {
     response.json(user);
 });
 
-// TODO this is temporary, delete this later
-// socket_io.on("connection", (socket) => {
-//     console.log("user " + socket.id + "connected");
-// });
+// Make a user an admin (admins only)
+app.post("/users/:user_id(" + uuid_regex + ")/adminstatus", async (request, response) => {
+    if (request.session.passport)
+    {
+        const requestingUser = await db.getUser(request.session.passport.user);
+        const ticket_request = request.body;
+
+        if (requestingUser && requestingUser.is_admin && ticket_request.admin_status != null && ticket_request.admin_status)  // Someone's admin status cannot be revoked, send 403 Forbidden if someone tries to do that
+        {
+            const targetUser = await db.getUser(request.params.user_id);
+            if (targetUser == null)
+            {
+                response.sendStatus(404);
+                return;
+            }
+            else
+            {
+                targetUser.is_admin = true;
+                targetUser.is_mentor = true;
+                await db.userRepository.save(targetUser);
+                response.json(true);
+                socket_io.emit(sioMessages.ticketsUpdated);
+                return;
+            }
+        }
+    }
+    response.sendStatus(403);
+});
+
+// Make a user a mentor (admins only)
+app.post("/users/:user_id(" + uuid_regex + ")/mentorstatus", async (request, response) => {
+    if (request.session.passport)
+    {
+        const requestingUser = await db.getUser(request.session.passport.user);
+        const ticket_request = request.body;
+
+        if (requestingUser && requestingUser.is_admin && ticket_request.mentor_status != null)
+        {
+            const targetUser = await db.getUser(request.params.user_id);
+            if (targetUser == null)
+            {
+                response.sendStatus(404);
+                return;
+            }
+            else
+            {
+                targetUser.is_mentor = ticket_request.mentor_status;
+                await db.userRepository.save(targetUser);
+                response.json(ticket_request.mentor_status);
+                socket_io.emit(sioMessages.ticketsUpdated);
+                return;
+            }
+        }
+    }
+    response.sendStatus(403);
+});
 
 server.listen(port, () => {
     console.log("Listening on port " + port);

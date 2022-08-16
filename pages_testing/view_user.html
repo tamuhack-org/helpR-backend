@@ -21,6 +21,11 @@
         <p id="name"></p>
         <h2>Is Admin</h2>
         <p id="is-admin"></p>
+        <button id="make-admin-button" onclick="makeAdmin()" disabled>Make Admin</button>
+        <h2>Is Mentor</h2>
+        <p id="is-mentor"></p>
+        <button id="make-mentor-button" onclick="makeMentor(true)" disabled>Make Mentor</button>
+        <button id="unmake-mentor-button" onclick="makeMentor(false)" disabled>Unmake Mentor</button>
         <h2>Tickets Opened</h2>
         <p id="tickets-opened"></p>
         <h2>Tickets Claimed</h2>
@@ -40,6 +45,7 @@
 
         async function fetchUser()
         {
+            fetchMe();
             if (window.location.toString().split("?").length < 2)
             {
                 return;
@@ -47,10 +53,10 @@
             const userID = window.location.toString().split("?")[1];
             const response = await fetch("/users/" + userID, { method: "GET" });
             const responseJSON = await response.json();
-            displayTicket(responseJSON);
+            displayUser(responseJSON);
         }
 
-        function displayTicket(userJSON)
+        function displayUser(userJSON)
         {
             if (!userJSON)
             {
@@ -61,7 +67,9 @@
             document.getElementById("title").innerText = "View User " + userJSON.user_id;
             document.getElementById("name").innerText = userJSON.name;
             document.getElementById("is-admin").innerText = userJSON.is_admin;
+            document.getElementById("is-mentor").innerText = userJSON.is_mentor;
 
+            document.getElementById("tickets-opened").innerHTML = "";
             for (let ticket of userJSON.opened_tickets)
             {
                 const ticketP = document.createElement("P");
@@ -72,6 +80,7 @@
                 document.getElementById("tickets-opened").appendChild(ticketP);
             }
             
+            document.getElementById("tickets-claimed").innerHTML = "";
             for (let ticket of userJSON.claimed_tickets)
             {
                 const ticketP = document.createElement("P");
@@ -83,6 +92,42 @@
             }
 
             document.getElementById("json").innerText = JSON.stringify(userJSON);
+        }
+
+        async function fetchMe()
+        {
+            const response = await fetch("/users/me", { method: "GET" });
+            const userJSON = await response.json();
+            if (userJSON != null && userJSON.is_admin)
+            {
+                document.getElementById("make-admin-button").disabled = false;
+                document.getElementById("make-mentor-button").disabled = false;
+                document.getElementById("unmake-mentor-button").disabled = false;
+            }
+        }
+
+        async function makeAdmin()
+        {
+            const userID = window.location.toString().split("?")[1];
+            const response = await fetch("/users/" + userID + "/adminstatus", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ admin_status: true })
+            });
+        }
+
+        async function makeMentor(mentorStatus)
+        {
+            const userID = window.location.toString().split("?")[1];
+            const response = await fetch("/users/" + userID + "/mentorstatus", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ mentor_status: mentorStatus })
+            });
         }
     </script>
 </body>
