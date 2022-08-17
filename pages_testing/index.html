@@ -16,8 +16,10 @@
     <p><a href="login.html">DEBUG: Log in</a></p>
     <p><a href="#" onclick="logout()">DEBUG: Log out</a></p>
     <p><a href="/users/me">DEBUG: Who am I</a></p>
-
+    <script src="/static/socket.io.min.js"></script>
     <script>
+        const socket = io();
+        
         async function logout ()
         {
             const response = await fetch("/logout", { method: "POST" });

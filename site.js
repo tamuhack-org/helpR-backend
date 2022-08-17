@@ -28,20 +28,35 @@ const uuid_regex = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
 app.use("/static", express.static("static"));  // Static files will be under static/
 app.use(express.static("pages_testing"));  // Testing pages will be under root
 
-app.use(cors());
-
-app.use(express.json());
-
-app.use(passport.initialize());
-
-app.use(session({
+const sessionMiddleware = session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: new PostgresStore({
         pool: db.pgPool
     })
-}));
+})
+
+app.use(cors());
+app.use(express.json());
+app.use(passport.initialize());
+app.use(sessionMiddleware);
+
+const wrap = middleware => (socket, next) => middleware(socket.request, {}, next);
+socket_io.use(wrap(sessionMiddleware));
+socket_io.use(wrap(passport.initialize()));
+socket_io.use(wrap(passport.session()));
+
+socket_io.use((socket, next) => {
+    if (socket.request.user)
+    {
+        next();
+    }
+    else
+    {
+        next(new Error("Unauthorized"));
+    }
+});
 
 // Request handling
 
@@ -192,6 +207,10 @@ app.post("/users/:user_id(" + uuid_regex + ")/mentorstatus", async (request, res
             else
             {
                 targetUser.is_mentor = ticket_request.mentor_status;
+                if (ticket_request.mentor_status == false)
+                {
+                    targetUser.is_mentor_online = false;
+                }
                 await db.userRepository.save(targetUser);
                 response.json(ticket_request.mentor_status);
                 socket_io.emit(sioMessages.ticketsUpdated);
@@ -200,6 +219,28 @@ app.post("/users/:user_id(" + uuid_regex + ")/mentorstatus", async (request, res
         }
     }
     response.sendStatus(403);
+});
+
+socket_io.on("connection", async (socket) => {
+    const session = socket.request.session;
+    session.socketId = socket.id;
+    session.save();
+
+    socket.on("disconnect", async () => {
+        if (socket.request.user && socket.request.user.is_mentor)
+        {
+            // const user = await db.getUser(socket.request.user.user_id);
+            // user.mentors_active_connections--;
+            // await db.userRepository.save(user);
+        }
+    });
+
+    if (socket.request.user && socket.request.user.is_mentor)
+    {
+        // const user = await db.getUser(socket.request.user.user_id);
+        // user.mentors_active_connections++;
+        // await db.userRepository.save(user);
+    }
 });
 
 server.listen(port, () => {
