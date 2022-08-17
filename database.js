@@ -157,6 +157,40 @@ export async function getTicket (ticket_id)
     return ticket;
 }
 
+export async function claimTicket (ticket_id, claimant)
+{
+    const ticket = await getTicket(ticket_id);
+    if (ticket == null)
+    {
+        return false;
+    }
+    else
+    {
+        ticket.claimant = claimant;
+        await ticketRepository.save(ticket); 
+        return true;
+    }
+}
+
+export async function resolveTicket (ticket_id, claimant)
+{
+    const ticket = await getTicket(ticket_id);
+    if (ticket == null)
+    {
+        return false;
+    }
+    else
+    {
+        if (ticket.claimant.user_id == claimant.user_id)
+        {
+            ticket.time_resolved = () => "CURRENT_TIMESTAMP";
+            await ticketRepository.save(ticket); 
+            return true;
+        }
+        return false;
+    }
+}
+
 export async function getAllUsers ()
 {
     const allUsers = await userRepository.find({
@@ -166,6 +200,20 @@ export async function getAllUsers ()
         }
     });
     return allUsers;
+}
+
+export async function getMentors ()
+{
+    const mentors = await userRepository.find({
+        where: {
+            is_mentor: true
+        },
+        relations: {
+            opened_tickets: true,
+            claimed_tickets: true
+        }
+    });
+    return mentors;
 }
 
 export async function getUser (user_id)
@@ -180,4 +228,38 @@ export async function getUser (user_id)
         }
     });
     return user;
+}
+
+export async function setUserAdminStatus (user_id, status)
+{
+    const user = await getUser(user_id);
+    if (user == null)
+    {
+        return false;
+    }
+    else
+    {
+        user.is_admin = status;
+        if (status == true)
+        {
+            user.is_mentor = true;
+        }
+        await userRepository.save(user); 
+        return true;
+    }
+}
+
+export async function setUserMentorStatus (user_id, status)
+{
+    const user = await getUser(user_id);
+    if (user == null)
+    {
+        return false;
+    }
+    else
+    {
+        user.is_mentor = status;
+        await userRepository.save(user); 
+        return true;
+    }
 }

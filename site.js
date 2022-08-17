@@ -122,8 +122,56 @@ app.get("/tickets/active", async (request, response) => {
 
 // Get a specific ticket
 app.get("/tickets/:ticket_id(" + uuid_regex + ")", async (request, response) => {
-    const user = await db.getTicket(request.params.ticket_id);
-    response.json(user);
+    const ticket = await db.getTicket(request.params.ticket_id);
+    response.json(ticket);
+});
+
+// Claim a ticket (mentors only)
+app.post("/tickets/:ticket_id(" + uuid_regex + ")/claim", async (request, response) => {
+    if (request.session.passport)
+    {
+        const claimant_user = await db.getUser(request.session.passport.user);
+        if (claimant_user && claimant_user.is_mentor)
+        {
+            const success = await db.claimTicket(request.params.ticket_id, claimant_user);
+            if (success)
+            {
+                response.json(true);
+                socket_io.emit(sioMessages.ticketsUpdated);
+                return;
+            }
+            else
+            {
+                response.sendStatus(404);
+                return;
+            }
+        }
+    }
+    response.sendStatus(403);
+});
+
+// Resolve a ticket (mentor who is claimant only)
+app.post("/tickets/:ticket_id(" + uuid_regex + ")/resolve", async (request, response) => {
+    if (request.session.passport)
+    {
+        const claimant_user = await db.getUser(request.session.passport.user);
+        if (claimant_user && claimant_user.is_mentor)
+        {
+            const success = await db.resolveTicket(request.params.ticket_id, claimant_user);
+            if (success)
+            {
+                response.json(true);
+                socket_io.emit(sioMessages.ticketsUpdated);
+                return;
+            }
+            else
+            {
+                response.sendStatus(404);
+                return;
+            }
+        }
+    }
+    response.sendStatus(403);
 });
 
 // Get all users (admins only)
@@ -139,6 +187,12 @@ app.get("/users/all", async (request, response) => {
         }
     }
     response.sendStatus(403);
+});
+
+// Get all mentors
+app.get("/users/mentors", async (request, response) => {
+    const mentors = await db.getMentors();
+    response.json(mentors);
 });
 
 // Get the currently logged in user
@@ -169,19 +223,16 @@ app.post("/users/:user_id(" + uuid_regex + ")/adminstatus", async (request, resp
 
         if (requestingUser && requestingUser.is_admin && ticket_request.admin_status != null && ticket_request.admin_status)  // Someone's admin status cannot be revoked, send 403 Forbidden if someone tries to do that
         {
-            const targetUser = await db.getUser(request.params.user_id);
-            if (targetUser == null)
+            const success = await db.setUserAdminStatus(request.params.user_id, true);
+            if (success)
             {
-                response.sendStatus(404);
+                response.json(true);
+                socket_io.emit(sioMessages.ticketsUpdated);
                 return;
             }
             else
             {
-                targetUser.is_admin = true;
-                targetUser.is_mentor = true;
-                await db.userRepository.save(targetUser);
-                response.json(true);
-                socket_io.emit(sioMessages.ticketsUpdated);
+                response.sendStatus(404);
                 return;
             }
         }
@@ -198,22 +249,16 @@ app.post("/users/:user_id(" + uuid_regex + ")/mentorstatus", async (request, res
 
         if (requestingUser && requestingUser.is_admin && ticket_request.mentor_status != null)
         {
-            const targetUser = await db.getUser(request.params.user_id);
-            if (targetUser == null)
+            const success = await db.setUserMentorStatus(request.params.user_id, ticket_request.mentor_status);
+            if (success)
             {
-                response.sendStatus(404);
+                response.json(true);
+                socket_io.emit(sioMessages.ticketsUpdated);
                 return;
             }
             else
             {
-                targetUser.is_mentor = ticket_request.mentor_status;
-                if (ticket_request.mentor_status == false)
-                {
-                    targetUser.is_mentor_online = false;
-                }
-                await db.userRepository.save(targetUser);
-                response.json(ticket_request.mentor_status);
-                socket_io.emit(sioMessages.ticketsUpdated);
+                response.sendStatus(404);
                 return;
             }
         }
@@ -221,6 +266,9 @@ app.post("/users/:user_id(" + uuid_regex + ")/mentorstatus", async (request, res
     response.sendStatus(403);
 });
 
+// TODO hoy hoy doy doy helpR should track how many mentors are online but it's too hard for my small brain
+// https://github.com/socketio/socket.io/blob/master/examples/passport-example/index.js
+// https://socket.io/docs/v4/middlewares/#compatibility-with-express-middleware
 socket_io.on("connection", async (socket) => {
     const session = socket.request.session;
     session.socketId = socket.id;
@@ -229,6 +277,9 @@ socket_io.on("connection", async (socket) => {
     socket.on("disconnect", async () => {
         if (socket.request.user && socket.request.user.is_mentor)
         {
+            // This doesn't reliably update in the database for some reason
+            // When mentors close all their tabs, the database might still say they have 2 active connections or something
+
             // const user = await db.getUser(socket.request.user.user_id);
             // user.mentors_active_connections--;
             // await db.userRepository.save(user);
