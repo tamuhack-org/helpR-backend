@@ -221,7 +221,7 @@ app.post("/users/:user_id(" + uuid_regex + ")/adminstatus", async (request, resp
         const requestingUser = await db.getUser(request.session.passport.user);
         const ticket_request = request.body;
 
-        if (requestingUser && requestingUser.is_admin && ticket_request.admin_status != null && ticket_request.admin_status)  // Someone's admin status cannot be revoked, send 403 Forbidden if someone tries to do that
+        if (requestingUser && requestingUser.is_admin && ticket_request.admin_status != null)
         {
             const success = await db.setUserAdminStatus(request.params.user_id, true);
             if (success)
