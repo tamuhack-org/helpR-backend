@@ -8,7 +8,13 @@ const server = createServer(app);
 const port = process.env.PORT || 3000;
 
 import { Server } from "socket.io";
-const socket_io = new Server(server);
+const socket_io = new Server(server, {
+    cors: {
+        origin: true,
+        methods: ["GET", "POST"]
+    }
+});
+
 const sioMessages = {
     ticketsUpdated: "tickets updated"
 };
