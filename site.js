@@ -151,9 +151,9 @@ app.post("/users/:user_id(" + uuid_regex + ")/adminstatus", async (request, resp
     const requestingUser = await db.getUser("7d90c244-951b-430d-8a6a-7eae0afefb48");
     const ticket_request = request.body;
 
-    if (requestingUser && requestingUser.is_admin && ticket_request.admin_status != null)
+    if (requestingUser && requestingUser.is_admin && ticket_request.status != null)
     {
-        const success = await db.setUserAdminStatus(request.params.user_id, true);
+        const success = await db.setUserAdminStatus(request.params.user_id, ticket_request.status);
         if (success)
         {
             response.json(true);
@@ -173,9 +173,9 @@ app.post("/users/:user_id(" + uuid_regex + ")/mentorstatus", async (request, res
     const requestingUser = await db.getUser("7d90c244-951b-430d-8a6a-7eae0afefb48");
     const ticket_request = request.body;
 
-    if (requestingUser && requestingUser.is_admin && ticket_request.mentor_status != null)
+    if (requestingUser && requestingUser.is_admin && ticket_request.status != null)
     {
-        const success = await db.setUserMentorStatus(request.params.user_id, ticket_request.mentor_status);
+        const success = await db.setUserMentorStatus(request.params.user_id, ticket_request.status);
         if (success)
         {
             response.json(true);
