@@ -182,10 +182,14 @@ export async function unclaimTicket (ticket_id, claimant)
     }
     else
     {
-        ticket.claimant = null;
-        ticket.time_claimed = null;
-        await ticketRepository.save(ticket); 
-        return true;
+        if (ticket.claimant.user_id == claimant.user_id)
+        {
+            ticket.claimant = null;
+            ticket.time_claimed = null;
+            await ticketRepository.save(ticket); 
+            return true;
+        }
+        return false;
     }
 }
 
