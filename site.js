@@ -52,7 +52,7 @@ app.post("/logout", async (request, response) => {
 app.post("/tickets", async (request, response) => {
     const author = await db.getUser("7d90c244-951b-430d-8a6a-7eae0afefb48");
     const ticket = tickets.makeFromRequest(request, author);
-    if (ticket)
+    if (ticket && author && !author.is_silenced)
     {
         await db.putTicket(ticket, author);
         socket_io.emit(sioMessages.ticketsUpdated);
@@ -64,7 +64,7 @@ app.post("/tickets", async (request, response) => {
     }
 });
 
-// Get all tickets (admins only)
+// Get all tickets (mentors only)
 app.get("/tickets/all", async (request, response) => {
     const user = await db.getUser("7d90c244-951b-430d-8a6a-7eae0afefb48");
     if (user.is_admin)
@@ -89,8 +89,25 @@ app.get("/tickets/:ticket_id(" + uuid_regex + ")", async (request, response) => 
 
 // Claim a ticket (mentors only)
 app.post("/tickets/:ticket_id(" + uuid_regex + ")/claim", async (request, response) => {
-    const claimant_user = await db.getUser("7d90c244-951b-430d-8a6a-7eae0afefb48");;
+    const claimant_user = await db.getUser("7d90c244-951b-430d-8a6a-7eae0afefb48");
     const success = await db.claimTicket(request.params.ticket_id, claimant_user);
+    if (success)
+    {
+        response.json(true);
+        socket_io.emit(sioMessages.ticketsUpdated);
+        return;
+    }
+    else
+    {
+        response.sendStatus(404);
+        return;
+    }
+});
+
+// Unclaim a ticket (mentor who is claimant only)
+app.post("/tickets/:ticket_id(" + uuid_regex + ")/unclaim", async (request, response) => {
+    const claimant_user = await db.getUser("7d90c244-951b-430d-8a6a-7eae0afefb48");
+    const success = await db.unclaimTicket(request.params.ticket_id, claimant_user);
     if (success)
     {
         response.json(true);

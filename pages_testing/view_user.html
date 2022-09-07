@@ -21,7 +21,8 @@
         <p id="name"></p>
         <h2>Is Admin</h2>
         <p id="is-admin"></p>
-        <button id="make-admin-button" onclick="makeAdmin()" disabled>Make Admin</button>
+        <button id="make-admin-button" onclick="makeAdmin(true)" disabled>Make Admin</button>
+        <button id="unmake-admin-button" onclick="makeAdmin(false)" disabled>Unmake Admin</button>
         <h2>Is Mentor</h2>
         <p id="is-mentor"></p>
         <button id="make-mentor-button" onclick="makeMentor(true)" disabled>Make Mentor</button>
@@ -101,12 +102,13 @@
             if (userJSON != null && userJSON.is_admin)
             {
                 document.getElementById("make-admin-button").disabled = false;
+                document.getElementById("unmake-admin-button").disabled = false;
                 document.getElementById("make-mentor-button").disabled = false;
                 document.getElementById("unmake-mentor-button").disabled = false;
             }
         }
 
-        async function makeAdmin()
+        async function makeAdmin(adminStatus)
         {
             const userID = window.location.toString().split("?")[1];
             const response = await fetch("/users/" + userID + "/adminstatus", {
@@ -114,7 +116,7 @@
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ admin_status: true })
+                body: JSON.stringify({ status: adminStatus })
             });
         }
 
@@ -126,7 +128,7 @@
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ mentor_status: mentorStatus })
+                body: JSON.stringify({ status: mentorStatus })
             });
         }
     </script>

@@ -167,6 +167,23 @@ export async function claimTicket (ticket_id, claimant)
     else
     {
         ticket.claimant = claimant;
+        ticket.time_claimed = () => "CURRENT_TIMESTAMP";
+        await ticketRepository.save(ticket); 
+        return true;
+    }
+}
+
+export async function unclaimTicket (ticket_id, claimant)
+{
+    const ticket = await getTicket(ticket_id);
+    if (ticket == null)
+    {
+        return false;
+    }
+    else
+    {
+        ticket.claimant = null;
+        ticket.time_claimed = null;
         await ticketRepository.save(ticket); 
         return true;
     }

@@ -28,6 +28,7 @@
         <h2>Claimant</h2>
         <p id="claimant"></p>
         <button id="claim-button" onclick="claim()" disabled>Claim</button>
+        <button id="unclaim-button" onclick="unclaim()" disabled>Unclaim</button>
         <h2>Resolved</h2>
         <p id="resolved"></p>
         <button id="resolve-button" onclick="resolve()" disabled>Resolve</button>
@@ -74,6 +75,7 @@
             document.getElementById("json").innerText = JSON.stringify(ticketJSON);
 
             document.getElementById("claim-button").disabled = true;
+            document.getElementById("unclaim-button").disabled = true;
             if (ticketJSON.claimant == null)
             {
                 document.getElementById("claimant").innerHTML = "none";
@@ -85,6 +87,10 @@
             else
             {
                 document.getElementById("claimant").innerHTML = "<a href=\"/view_user.html?" + ticketJSON.claimant.user_id + "\">" + ticketJSON.claimant.name + "</a>";
+                if (me != null && ticketJSON.claimant.user_id == me.user_id)
+                {
+                    document.getElementById("unclaim-button").disabled = false;
+                }
             }
             
             document.getElementById("resolve-button").disabled = true;
@@ -112,6 +118,14 @@
         {
             const ticketID = window.location.toString().split("?")[1];
             const response = await fetch("/tickets/" + ticketID + "/claim", {
+                method: "POST"
+            });
+        }
+
+        async function unclaim()
+        {
+            const ticketID = window.location.toString().split("?")[1];
+            const response = await fetch("/tickets/" + ticketID + "/unclaim", {
                 method: "POST"
             });
         }
