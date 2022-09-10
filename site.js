@@ -64,15 +64,10 @@ app.post("/tickets", async (request, response) => {
     }
 });
 
-// Get all tickets (mentors only)
+// Get all tickets
 app.get("/tickets/all", async (request, response) => {
-    const user = await db.getUser("7d90c244-951b-430d-8a6a-7eae0afefb48");
-    if (user.is_admin)
-    {
-        const allTickets = await db.getAllTickets();
-        response.json(allTickets);
-        return;
-    }
+    const allTickets = await db.getAllTickets();
+    response.json(allTickets);
 });
 
 // Get all active tickets

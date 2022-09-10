@@ -1,7 +1,7 @@
 "use strict";
 
 import "reflect-metadata";
-import { EntitySchema, DataSource } from "typeorm";
+import { EntitySchema, DataSource, IsNull } from "typeorm";
 
 import { config as dotenv_config } from "dotenv";
 dotenv_config();
@@ -133,7 +133,7 @@ export async function getActiveTickets ()
 {
     const activeTickets = await ticketRepository.find({
         where: {
-            time_claimed: null
+            time_claimed: IsNull()
         },
         relations: {
             author: true,
