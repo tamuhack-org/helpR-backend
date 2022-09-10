@@ -60,7 +60,7 @@ app.post("/tickets", async (request, response) => {
     }
     else
     {
-        response.json({ message: "Invalid data!" });
+        response.sendStatus(401);
     }
 });
 
@@ -163,8 +163,6 @@ app.post("/users/:user_id(" + uuid_regex + ")/adminstatus", async (request, resp
     const requestingUser = await db.getUser("7d90c244-951b-430d-8a6a-7eae0afefb48");
     const ticket_request = request.body;
 
-    console.log(request.params.user_id);
-    console.log(requestingUser.user_id);
     if (requestingUser && requestingUser.is_admin && ticket_request.status != null && requestingUser.user_id != request.params.user_id)  // One cannot change their own admin status
     {
         const success = await db.setUserAdminStatus(request.params.user_id, ticket_request.status);
