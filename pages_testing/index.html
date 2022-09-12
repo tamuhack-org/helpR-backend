@@ -13,21 +13,11 @@
     <h2 id="logged-in-as"></h2>
     <p><a href="submit_ticket.html">DEBUG: Submit a ticket</a></p>
     <p><a href="view_tickets.html">DEBUG: View tickets</a></p>
-    <p><a href="login.html">DEBUG: Log in</a></p>
-    <p><a href="#" onclick="logout()">DEBUG: Log out</a></p>
     <p><a href="/users/me">DEBUG: Who am I</a></p>
     <script src="/static/socket.io.min.js"></script>
     <script>
         const socket = io();
         
-        async function logout ()
-        {
-            const response = await fetch("/logout", { method: "POST" });
-            const response_json = await response.json();
-            window.alert(response_json.message);
-            await displayCurrentUser()
-        }
-
         async function displayCurrentUser ()
         {
             const loggedInAs = document.getElementById("logged-in-as");

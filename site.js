@@ -33,16 +33,6 @@ app.use(express.json());
 
 // Request handling
 
-// Log a user in with google
-app.get("/login/google", (request, response) => {
-    response.send("<h1>Authentication has been temporarily disabled. There is no need to log in.</h1>");
-});
-
-// Log a user in with google (used by Passport.js)
-app.get("/oauth2/redirect/google", (request, response) => {
-    response.send("<h1>Authentication has been temporarily disabled. There is no need to log in.</h1>");
-});
-
 // Log out
 app.post("/logout", async (request, response) => {
     response.send("<h1>Authentication has been temporarily disabled. There is no need to log out.</h1>");
@@ -67,6 +57,7 @@ app.post("/tickets", async (request, response) => {
 // Get all tickets
 app.get("/tickets/all", async (request, response) => {
     const allTickets = await db.getAllTickets();
+    console.log(request.headers.authorization);
     response.json(allTickets);
 });
 
