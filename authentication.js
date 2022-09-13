@@ -17,24 +17,6 @@ export async function getOrMakeUser (request)
         }
         catch (error)
         {
-            console.log("Axios request failed to GET " + tokenCheckUrl);
-            // TODO this *should* be temporary just to figure out what the error is
-            if (error.response)
-            {
-                console.log("Looks like an HTTP error code was sent");
-                console.log("Data:");
-                console.log(error.response.data);
-                console.log("Status:");
-                console.log(error.response.status);
-                console.log("Headers:");
-                console.log(error.response.headers);
-            }
-            else if (error.request)
-            {
-                console.log("Looks like no response was received");
-                console.log("Request:");
-                console.log(error.request);
-            }
             return null;
         }
 
