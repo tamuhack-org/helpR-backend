@@ -22,6 +22,7 @@ const sioMessages = {
 
 import * as tickets from "./tickets.js";
 import * as db from "./database.js";
+import * as auth from "./authentication.js";
 
 const uuid_regex = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 
@@ -33,14 +34,9 @@ app.use(express.json());
 
 // Request handling
 
-// Log out
-app.post("/logout", async (request, response) => {
-    response.send("<h1>Authentication has been temporarily disabled. There is no need to log out.</h1>");
-});
-
 // Post a new ticket
 app.post("/tickets", async (request, response) => {
-    const author = await db.getUser("7d90c244-951b-430d-8a6a-7eae0afefb48");
+    const author = await auth.getOrMakeUser(request);
     const ticket = tickets.makeFromRequest(request, author);
     if (ticket && author && !author.is_silenced)
     {
@@ -57,7 +53,6 @@ app.post("/tickets", async (request, response) => {
 // Get all tickets
 app.get("/tickets/all", async (request, response) => {
     const allTickets = await db.getAllTickets();
-    console.log(request.headers.authorization);
     response.json(allTickets);
 });
 
@@ -75,7 +70,7 @@ app.get("/tickets/:ticket_id(" + uuid_regex + ")", async (request, response) => 
 
 // Claim a ticket (mentors only)
 app.post("/tickets/:ticket_id(" + uuid_regex + ")/claim", async (request, response) => {
-    const claimant_user = await db.getUser("7d90c244-951b-430d-8a6a-7eae0afefb48");
+    const claimant_user = await auth.getOrMakeUser(request);
     const success = await db.claimTicket(request.params.ticket_id, claimant_user);
     if (success)
     {
@@ -85,14 +80,14 @@ app.post("/tickets/:ticket_id(" + uuid_regex + ")/claim", async (request, respon
     }
     else
     {
-        response.sendStatus(404);
+        response.sendStatus(400);
         return;
     }
 });
 
 // Unclaim a ticket (mentor who is claimant only)
 app.post("/tickets/:ticket_id(" + uuid_regex + ")/unclaim", async (request, response) => {
-    const claimant_user = await db.getUser("7d90c244-951b-430d-8a6a-7eae0afefb48");
+    const claimant_user = await auth.getOrMakeUser(request);
     const success = await db.unclaimTicket(request.params.ticket_id, claimant_user);
     if (success)
     {
@@ -102,14 +97,14 @@ app.post("/tickets/:ticket_id(" + uuid_regex + ")/unclaim", async (request, resp
     }
     else
     {
-        response.sendStatus(404);
+        response.sendStatus(400);
         return;
     }
 });
 
 // Resolve a ticket (mentor who is claimant only)
 app.post("/tickets/:ticket_id(" + uuid_regex + ")/resolve", async (request, response) => {
-    const claimant_user = await db.getUser("7d90c244-951b-430d-8a6a-7eae0afefb48");;
+    const claimant_user = await auth.getOrMakeUser(request);
     const success = await db.resolveTicket(request.params.ticket_id, claimant_user);
     if (success)
     {
@@ -119,7 +114,7 @@ app.post("/tickets/:ticket_id(" + uuid_regex + ")/resolve", async (request, resp
     }
     else
     {
-        response.sendStatus(404);
+        response.sendStatus(400);
         return;
     }
 });
@@ -139,7 +134,7 @@ app.get("/users/mentors", async (request, response) => {
 
 // Get the currently logged in user
 app.get("/users/me", async (request, response) => {
-    const user = await db.getUser("7d90c244-951b-430d-8a6a-7eae0afefb48");
+    const user = await auth.getOrMakeUser(request);
     response.json(user);
 });
 
@@ -151,7 +146,7 @@ app.get("/users/:user_id(" + uuid_regex + ")", async (request, response) => {
 
 // Make a user an admin (admins only)
 app.post("/users/:user_id(" + uuid_regex + ")/adminstatus", async (request, response) => {
-    const requestingUser = await db.getUser("7d90c244-951b-430d-8a6a-7eae0afefb48");
+    const requestingUser = await auth.getOrMakeUser(request);
     const ticket_request = request.body;
 
     if (requestingUser && requestingUser.is_admin && ticket_request.status != null && requestingUser.user_id != request.params.user_id)  // One cannot change their own admin status
@@ -165,7 +160,7 @@ app.post("/users/:user_id(" + uuid_regex + ")/adminstatus", async (request, resp
         }
         else
         {
-            response.sendStatus(404);
+            response.sendStatus(400);
             return;
         }
     }
@@ -177,7 +172,7 @@ app.post("/users/:user_id(" + uuid_regex + ")/adminstatus", async (request, resp
 
 // Make a user a mentor (admins only)
 app.post("/users/:user_id(" + uuid_regex + ")/mentorstatus", async (request, response) => {
-    const requestingUser = await db.getUser("7d90c244-951b-430d-8a6a-7eae0afefb48");
+    const requestingUser = await auth.getOrMakeUser(request);
     const ticket_request = request.body;
 
     if (requestingUser && requestingUser.is_admin && ticket_request.status != null)
@@ -191,7 +186,7 @@ app.post("/users/:user_id(" + uuid_regex + ")/mentorstatus", async (request, res
         }
         else
         {
-            response.sendStatus(404);
+            response.sendStatus(400);
             return;
         }
     }

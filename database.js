@@ -138,7 +138,7 @@ export async function getTicket (ticket_id)
 export async function claimTicket (ticket_id, claimant)
 {
     const ticket = await getTicket(ticket_id);
-    if (ticket == null)
+    if (ticket == null || claimant == null)
     {
         return false;
     }
@@ -154,7 +154,7 @@ export async function claimTicket (ticket_id, claimant)
 export async function unclaimTicket (ticket_id, claimant)
 {
     const ticket = await getTicket(ticket_id);
-    if (ticket == null)
+    if (ticket == null || claimant == null)
     {
         return false;
     }
@@ -174,7 +174,7 @@ export async function unclaimTicket (ticket_id, claimant)
 export async function resolveTicket (ticket_id, claimant)
 {
     const ticket = await getTicket(ticket_id);
-    if (ticket == null)
+    if (ticket == null || claimant == null)
     {
         return false;
     }
@@ -229,6 +229,20 @@ export async function getUser (user_id)
     return user;
 }
 
+export async function getUserByEmail (email)
+{
+    const user = await userRepository.findOne({
+        where: {
+            email: email
+        },
+        relations: {
+            opened_tickets: true,
+            claimed_tickets: true
+        }
+    });
+    return user;
+}
+
 export async function setUserAdminStatus (user_id, status)
 {
     const user = await getUser(user_id);
@@ -261,4 +275,19 @@ export async function setUserMentorStatus (user_id, status)
         await userRepository.save(user); 
         return true;
     }
+}
+
+// This should only be called with a successfully authenticated email address from the Google API call
+export async function makeUser (email)
+{
+    const newUser = {
+        email: email,
+        name: email,  // TODO is there a way I can get the name associated with the email through a Google API call?
+        is_admin: false,
+        is_mentor: false,
+        is_silenced: false,
+        time_created: () => "CURRENT_TIMESTAMP"
+    }
+    await userRepository.save(newUser);
+    return newUser;
 }

@@ -11,27 +11,6 @@
 <body onload="displayCurrentUser()">
     <h1>HELPr</h1>
     <h2 id="logged-in-as"></h2>
-    <p><a href="submit_ticket.html">DEBUG: Submit a ticket</a></p>
-    <p><a href="view_tickets.html">DEBUG: View tickets</a></p>
-    <p><a href="/users/me">DEBUG: Who am I</a></p>
-    <script src="/static/socket.io.min.js"></script>
-    <script>
-        const socket = io();
-        
-        async function displayCurrentUser ()
-        {
-            const loggedInAs = document.getElementById("logged-in-as");
-            const response = await fetch("/users/me", { method: "GET" });
-            const currentUser = await response.json();
-            if (currentUser)
-            {
-                loggedInAs.innerText = "Logged in as " + currentUser.name
-            }
-            else
-            {
-                loggedInAs.innerText = "Not logged in"
-            }
-        }
-    </script>
+    <p><a href="view_tickets.html">View tickets</a></p>
 </body>
 </html>
