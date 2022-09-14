@@ -1,7 +1,7 @@
 "use strict";
 
 import "reflect-metadata";
-import { EntitySchema, DataSource, IsNull } from "typeorm";
+import { EntitySchema, DataSource, IsNull, Not } from "typeorm";
 
 import { config as dotenv_config } from "dotenv";
 dotenv_config();
@@ -107,9 +107,9 @@ export async function getAllTickets ()
     return allTickets;
 }
 
-export async function getActiveTickets ()
+export async function getUnclaimedTickets ()
 {
-    const activeTickets = await ticketRepository.find({
+    const unclaimedTickets = await ticketRepository.find({
         where: {
             time_claimed: IsNull()
         },
@@ -118,8 +118,66 @@ export async function getActiveTickets ()
             claimant: true
         }
     });
-    return activeTickets;
+    return unclaimedTickets;
 }
+
+export async function getClaimedTickets ()
+{
+    const claimedtickets = await ticketRepository.find({
+        where: {
+            time_claimed: Not(IsNull())
+        },
+        relations: {
+            author: true,
+            claimant: true
+        }
+    });
+    return claimedtickets;
+}
+
+export async function getClaimedUnresolvedTickets ()
+{
+    const claimedUnresolvedtickets = await ticketRepository.find({
+        where: {
+            time_claimed: Not(IsNull()),
+            time_resolved: IsNull()
+        },
+        relations: {
+            author: true,
+            claimant: true
+        }
+    });
+    return claimedUnresolvedtickets;
+}
+
+export async function getUnresolvedTickets ()
+{
+    const unresolvedTickets = await ticketRepository.find({
+        where: {
+            time_resolved: IsNull()
+        },
+        relations: {
+            author: true,
+            claimant: true
+        }
+    });
+    return unresolvedTickets;
+}
+
+export async function getResolvedTickets ()  // Previously known as "active" tickets
+{
+    const resolvedTickets = await ticketRepository.find({
+        where: {
+            time_resolved: Not(IsNull())
+        },
+        relations: {
+            author: true,
+            claimant: true
+        }
+    });
+    return resolvedTickets;
+}
+
 
 export async function getTicket (ticket_id)
 {
@@ -138,7 +196,7 @@ export async function getTicket (ticket_id)
 export async function claimTicket (ticket_id, claimant)
 {
     const ticket = await getTicket(ticket_id);
-    if (ticket == null || claimant == null)
+    if (ticket == null || claimant == null || ticket.time_claimed != null)
     {
         return false;
     }
@@ -154,7 +212,7 @@ export async function claimTicket (ticket_id, claimant)
 export async function unclaimTicket (ticket_id, claimant)
 {
     const ticket = await getTicket(ticket_id);
-    if (ticket == null || claimant == null)
+    if (ticket == null || claimant == null || ticket.time_claimed == null)
     {
         return false;
     }
@@ -174,7 +232,7 @@ export async function unclaimTicket (ticket_id, claimant)
 export async function resolveTicket (ticket_id, claimant)
 {
     const ticket = await getTicket(ticket_id);
-    if (ticket == null || claimant == null)
+    if (ticket == null || claimant == null || ticket.time_resolved != null)
     {
         return false;
     }
@@ -183,6 +241,25 @@ export async function resolveTicket (ticket_id, claimant)
         if (ticket.claimant.user_id == claimant.user_id)
         {
             ticket.time_resolved = () => "CURRENT_TIMESTAMP";
+            await ticketRepository.save(ticket); 
+            return true;
+        }
+        return false;
+    }
+}
+
+export async function unresolveTicket (ticket_id, claimant)
+{
+    const ticket = await getTicket(ticket_id);
+    if (ticket == null || claimant == null || ticket.time_resolved == null)
+    {
+        return false;
+    }
+    else
+    {
+        if (ticket.claimant.user_id == claimant.user_id)
+        {
+            ticket.time_resolved = null;
             await ticketRepository.save(ticket); 
             return true;
         }
@@ -206,6 +283,20 @@ export async function getMentors ()
     const mentors = await userRepository.find({
         where: {
             is_mentor: true
+        },
+        relations: {
+            opened_tickets: true,
+            claimed_tickets: true
+        }
+    });
+    return mentors;
+}
+
+export async function getAdmins ()
+{
+    const mentors = await userRepository.find({
+        where: {
+            is_admin: true
         },
         relations: {
             opened_tickets: true,

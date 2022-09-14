@@ -56,10 +56,34 @@ app.get("/tickets/all", async (request, response) => {
     response.json(allTickets);
 });
 
-// Get all active tickets
-app.get("/tickets/active", async (request, response) => {
-    const activeTickets = await db.getActiveTickets();
-    response.json(activeTickets);
+// Get all unclaimed tickets
+app.get("/tickets/unclaimed", async (request, response) => {
+    const unclaimedTickets = await db.getUnclaimedTickets();
+    response.json(unclaimedTickets);
+});
+
+// Get all claimed tickets
+app.get("/tickets/claimed", async (request, response) => {
+    const claimedTickets = await db.getClaimedTickets();
+    response.json(claimedTickets);
+});
+
+// Get all claimed and unresolved tickets
+app.get("/tickets/claimedunresolved", async (request, response) => {
+    const claimedTickets = await db.getClaimedUnresolvedTickets();
+    response.json(claimedTickets);
+});
+
+// Get all unresolved tickets (previously known as "active" tickets)
+app.get("/tickets/unresolved", async (request, response) => {
+    const unresolvedTickets = await db.getUnresolvedTickets();
+    response.json(unresolvedTickets);
+});
+
+// Get all resolved tickets
+app.get("/tickets/resolved", async (request, response) => {
+    const resolvedTickets = await db.getResolvedTickets();
+    response.json(resolvedTickets);
 });
 
 // Get a specific ticket
@@ -119,7 +143,24 @@ app.post("/tickets/:ticket_id(" + uuid_regex + ")/resolve", async (request, resp
     }
 });
 
-// Get all users (admins only)
+// Unresolve a ticket (mentor who is claimant only)
+app.post("/tickets/:ticket_id(" + uuid_regex + ")/unresolve", async (request, response) => {
+    const claimant_user = await auth.getOrMakeUser(request);
+    const success = await db.unresolveTicket(request.params.ticket_id, claimant_user);
+    if (success)
+    {
+        response.json(true);
+        socket_io.emit(sioMessages.ticketsUpdated);
+        return;
+    }
+    else
+    {
+        response.sendStatus(400);
+        return;
+    }
+});
+
+// Get all users
 app.get("/users/all", async (request, response) => {
     const allUsers = await db.getAllUsers();
     response.json(allUsers);
@@ -130,6 +171,12 @@ app.get("/users/all", async (request, response) => {
 app.get("/users/mentors", async (request, response) => {
     const mentors = await db.getMentors();
     response.json(mentors);
+});
+
+// Get all admins
+app.get("/users/admins", async (request, response) => {
+    const admins = await db.getAdmins();
+    response.json(admins);
 });
 
 // Get the currently logged in user
