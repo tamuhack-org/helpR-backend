@@ -16,9 +16,15 @@ const socket_io = new Server(server, {
 });
 
 const sioMessages = {
-    ticketsUpdated: "tickets updated"
+    ticketsUpdated: "tickets updated",
+    usersUpdated: "users updated"
 };
 
+// Corny JavaScript won't let me do this manually from another module
+export function AnnounceNewUser ()
+{
+    socket_io.emit(sioMessages.usersUpdated);
+}
 
 import * as tickets from "./tickets.js";
 import * as db from "./database.js";
@@ -202,7 +208,7 @@ app.post("/users/:user_id(" + uuid_regex + ")/adminstatus", async (request, resp
         if (success)
         {
             response.json(true);
-            socket_io.emit(sioMessages.ticketsUpdated);
+            socket_io.emit(sioMessages.usersUpdated);
             return;
         }
         else
@@ -228,7 +234,7 @@ app.post("/users/:user_id(" + uuid_regex + ")/mentorstatus", async (request, res
         if (success)
         {
             response.json(true);
-            socket_io.emit(sioMessages.ticketsUpdated);
+            socket_io.emit(sioMessages.usersUpdated);
             return;
         }
         else

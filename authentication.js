@@ -2,6 +2,7 @@
 
 import * as db from "./database.js";
 import axios from "axios";
+import { AnnounceNewUser } from "./site.js";
 
 export async function getOrMakeUser (request)
 {
@@ -27,6 +28,7 @@ export async function getOrMakeUser (request)
             if (user == null)
             {
                 user = await db.makeUser(response.data.email);
+                AnnounceNewUser();
             }
             return user;
         }
