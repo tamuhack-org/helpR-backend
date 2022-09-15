@@ -14,6 +14,7 @@ export function makeFromRequest(request, author)
             time_opened: () => "CURRENT_TIMESTAMP",
             time_claimed: null,
             time_resolved: null,
+            time_last_updated: () => "CURRENT_TIMESTAMP",
             description: ticket_request.description,
             location: ticket_request.location,
             contact: ticket_request.contact,

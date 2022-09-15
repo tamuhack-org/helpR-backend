@@ -26,7 +26,9 @@ const User = new EntitySchema ({
         is_admin: { type: "boolean", default: "false" },
         is_mentor: { type: "boolean", default: "false" },
         is_silenced: { type: "boolean", default: "false" },
-        time_created: { type: "timestamp with time zone" }
+        time_created: { type: "timestamp with time zone" },
+        currently_opened_ticket_id: { type: "uuid", nullable: true },
+        currently_claimed_ticket_id: { type: "uuid", nullable: true }
     },
     relations: {
         opened_tickets: {
@@ -50,6 +52,7 @@ const Ticket = new EntitySchema ({
         time_opened: { type: "timestamp with time zone" },
         time_claimed: { type: "timestamp with time zone", nullable: true },
         time_resolved: { type: "timestamp with time zone", nullable: true },
+        time_last_updated: { type: "timestamp with time zone" },
         description: { type: "text" },
         location: { type: "text" },
         contact: { type: "text" },
@@ -91,9 +94,10 @@ export async function initializeDatabase ()
 
 export async function putTicket (ticket, author)
 {
+    ticket = await ticketRepository.save(ticket);
+    author.currently_opened_ticket_id = ticket.ticket_id;
     author.opened_tickets.push(ticket);
     await userRepository.save(author);
-    await ticketRepository.save(ticket);
 }
 
 export async function getAllTickets ()
@@ -195,8 +199,8 @@ export async function getTicket (ticket_id)
 
 export async function claimTicket (ticket_id, claimant)
 {
-    const ticket = await getTicket(ticket_id);
-    if (ticket == null || claimant == null || claimant.is_mentor == false || ticket.time_claimed != null)
+    let ticket = await getTicket(ticket_id);
+    if (ticket == null || claimant == null || claimant.is_mentor == false || claimant.currently_claimed_ticket_id != null || ticket.time_claimed != null)
     {
         return false;
     }
@@ -204,14 +208,20 @@ export async function claimTicket (ticket_id, claimant)
     {
         ticket.claimant = claimant;
         ticket.time_claimed = () => "CURRENT_TIMESTAMP";
-        await ticketRepository.save(ticket); 
+        ticket.time_last_updated = () => "CURRENT_TIMESTAMP";
+        ticket = await ticketRepository.save(ticket); 
+        
+        let updatedClaimant = await getUser(claimant.user_id);
+        updatedClaimant.currently_claimed_ticket_id = ticket_id;
+        await userRepository.save(updatedClaimant);
+
         return true;
     }
 }
 
 export async function unclaimTicket (ticket_id, claimant)
 {
-    const ticket = await getTicket(ticket_id);
+    let ticket = await getTicket(ticket_id);
     if (ticket == null || claimant == null || ticket.time_claimed == null)  // Users can still unclaim a ticket if they are no longer a mentor, I guess
     {
         return false;
@@ -222,45 +232,86 @@ export async function unclaimTicket (ticket_id, claimant)
         {
             ticket.claimant = null;
             ticket.time_claimed = null;
-            await ticketRepository.save(ticket); 
+            ticket.time_last_updated = () => "CURRENT_TIMESTAMP";
+            claimant.claimed_tickets.splice(claimant.claimed_tickets.indexOf(ticket), 1);  // Remove the ticket from the claimant's list of claimed tickets
+            claimant.currently_claimed_ticket_id = null;
+            ticket = await ticketRepository.save(ticket);
+
+            let updatedClaimant = await getUser(claimant.user_id);
+            updatedClaimant.currently_claimed_ticket_id = null;
+            await userRepository.save(updatedClaimant);
+
             return true;
         }
         return false;
     }
 }
 
-export async function resolveTicket (ticket_id, claimant)
+export async function resolveTicket (ticket_id, resolving_user)
 {
-    const ticket = await getTicket(ticket_id);
-    if (ticket == null || claimant == null || ticket.time_resolved != null)  // Users can still resolve a claimed ticket if they are no longer a mentor, I guess
+    let ticket = await getTicket(ticket_id);
+    if (ticket == null || resolving_user == null || ticket.time_resolved != null)  // Users can still resolve a claimed ticket if they are no longer a mentor, I guess
     {
         return false;
     }
     else
     {
-        if (ticket.claimant.user_id == claimant.user_id)
+        if (ticket.claimant.user_id == resolving_user.user_id || ticket.author.user_id == resolving_user.user_id)
         {
             ticket.time_resolved = () => "CURRENT_TIMESTAMP";
-            await ticketRepository.save(ticket); 
+            ticket.time_last_updated = () => "CURRENT_TIMESTAMP";
+            ticket = await ticketRepository.save(ticket); 
+
+            let author = await getUser(ticket.author.user_id); 
+            author.currently_opened_ticket_id = null;
+            await userRepository.save(author);
+            if (ticket.claimant)
+            {
+                let claimant = await getUser(ticket.claimant.user_id);
+                claimant.currently_claimed_ticket_id = null;
+                await userRepository.save(claimant);
+            }
+
             return true;
         }
         return false;
     }
 }
 
-export async function unresolveTicket (ticket_id, claimant)
+export async function unresolveTicket (ticket_id, unresolving_user)
 {
-    const ticket = await getTicket(ticket_id);
-    if (ticket == null || claimant == null || ticket.time_resolved == null)
+    let ticket = await getTicket(ticket_id);
+    if (ticket == null || unresolving_user == null || ticket.time_resolved == null)
     {
         return false;
     }
     else
     {
-        if (ticket.claimant.user_id == claimant.user_id)
+        if (ticket.claimant.user_id == unresolving_user.user_id || ticket.author.user_id == unresolving_user.user_id)
         {
+            if (ticket.author.currently_opened_ticket_id)
+            {
+                console.log("This is a very niche circumstance so I'll say what happened here: A mentor tried to unresolve a resolved ticket but the original author already has an currently opened ticket so the ticket cannot be unresolved.");
+                return false;
+            }
+            if (ticket.claimant.currently_claimed_ticket_id)
+            {
+                return false;
+            }
             ticket.time_resolved = null;
-            await ticketRepository.save(ticket); 
+            ticket.time_last_updated = () => "CURRENT_TIMESTAMP";
+            ticket = await ticketRepository.save(ticket); 
+
+            let author = await getUser(ticket.author.user_id);
+            author.currently_opened_ticket_id = ticket.ticket_id;
+            await userRepository.save(author);
+            if (ticket.claimant)
+            {
+                let claimant = await getUser(ticket.claimant.user_id);
+                claimant.currently_claimed_ticket_id = ticket.ticket_id;
+                await userRepository.save(claimant);
+            }
+
             return true;
         }
         return false;
@@ -377,7 +428,9 @@ export async function makeUser (email)
         is_admin: false,
         is_mentor: false,
         is_silenced: false,
-        time_created: () => "CURRENT_TIMESTAMP"
+        time_created: () => "CURRENT_TIMESTAMP",
+        currently_opened_ticket_id: null,
+        currently_claimed_ticket_id: null
     }
     await userRepository.save(newUser);
     return newUser;

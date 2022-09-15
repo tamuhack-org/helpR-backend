@@ -44,7 +44,7 @@ app.use(express.json());
 app.post("/tickets", async (request, response) => {
     const author = await auth.getOrMakeUser(request);
     const ticket = tickets.makeFromRequest(request, author);
-    if (ticket && author && !author.is_silenced)
+    if (ticket && author && author.currently_opened_ticket_id == null && !author.is_silenced)
     {
         await db.putTicket(ticket, author);
         socket_io.emit(sioMessages.ticketsUpdated);
@@ -132,10 +132,10 @@ app.post("/tickets/:ticket_id(" + uuid_regex + ")/unclaim", async (request, resp
     }
 });
 
-// Resolve a ticket (mentor who is claimant only)
+// Resolve a ticket (mentor who is claimant OR ticket author)
 app.post("/tickets/:ticket_id(" + uuid_regex + ")/resolve", async (request, response) => {
-    const claimant_user = await auth.getOrMakeUser(request);
-    const success = await db.resolveTicket(request.params.ticket_id, claimant_user);
+    const resolving_user = await auth.getOrMakeUser(request);
+    const success = await db.resolveTicket(request.params.ticket_id, resolving_user);
     if (success)
     {
         response.json(true);
@@ -149,10 +149,10 @@ app.post("/tickets/:ticket_id(" + uuid_regex + ")/resolve", async (request, resp
     }
 });
 
-// Unresolve a ticket (mentor who is claimant only)
+// Unresolve a ticket (mentor who is claimant OR ticket author)
 app.post("/tickets/:ticket_id(" + uuid_regex + ")/unresolve", async (request, response) => {
-    const claimant_user = await auth.getOrMakeUser(request);
-    const success = await db.unresolveTicket(request.params.ticket_id, claimant_user);
+    const unresolving_user = await auth.getOrMakeUser(request);
+    const success = await db.unresolveTicket(request.params.ticket_id, unresolving_user);
     if (success)
     {
         response.json(true);
