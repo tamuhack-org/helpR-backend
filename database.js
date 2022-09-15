@@ -196,7 +196,7 @@ export async function getTicket (ticket_id)
 export async function claimTicket (ticket_id, claimant)
 {
     const ticket = await getTicket(ticket_id);
-    if (ticket == null || claimant == null || ticket.time_claimed != null)
+    if (ticket == null || claimant == null || claimant.is_mentor == false || ticket.time_claimed != null)
     {
         return false;
     }
@@ -212,7 +212,7 @@ export async function claimTicket (ticket_id, claimant)
 export async function unclaimTicket (ticket_id, claimant)
 {
     const ticket = await getTicket(ticket_id);
-    if (ticket == null || claimant == null || ticket.time_claimed == null)
+    if (ticket == null || claimant == null || ticket.time_claimed == null)  // Users can still unclaim a ticket if they are no longer a mentor, I guess
     {
         return false;
     }
@@ -232,7 +232,7 @@ export async function unclaimTicket (ticket_id, claimant)
 export async function resolveTicket (ticket_id, claimant)
 {
     const ticket = await getTicket(ticket_id);
-    if (ticket == null || claimant == null || ticket.time_resolved != null)
+    if (ticket == null || claimant == null || ticket.time_resolved != null)  // Users can still resolve a claimed ticket if they are no longer a mentor, I guess
     {
         return false;
     }
