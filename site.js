@@ -106,6 +106,7 @@ app.post("/tickets/:ticket_id(" + uuid_regex + ")/claim", async (request, respon
     {
         response.json(true);
         socket_io.emit(sioMessages.ticketsUpdated);
+        socket_io.emit(sioMessages.usersUpdated);
         return;
     }
     else
@@ -123,6 +124,7 @@ app.post("/tickets/:ticket_id(" + uuid_regex + ")/unclaim", async (request, resp
     {
         response.json(true);
         socket_io.emit(sioMessages.ticketsUpdated);
+        socket_io.emit(sioMessages.usersUpdated);
         return;
     }
     else
@@ -140,6 +142,7 @@ app.post("/tickets/:ticket_id(" + uuid_regex + ")/resolve", async (request, resp
     {
         response.json(true);
         socket_io.emit(sioMessages.ticketsUpdated);
+        socket_io.emit(sioMessages.usersUpdated);
         return;
     }
     else
@@ -157,6 +160,7 @@ app.post("/tickets/:ticket_id(" + uuid_regex + ")/unresolve", async (request, re
     {
         response.json(true);
         socket_io.emit(sioMessages.ticketsUpdated);
+        socket_io.emit(sioMessages.usersUpdated);
         return;
     }
     else
