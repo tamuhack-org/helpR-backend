@@ -256,7 +256,7 @@ export async function resolveTicket (ticket_id, resolving_user)
     }
     else
     {
-        if (ticket.claimant.user_id == resolving_user.user_id || ticket.author.user_id == resolving_user.user_id)
+        if ((ticket.claimant && ticket.claimant.user_id == resolving_user.user_id) || ticket.author.user_id == resolving_user.user_id)
         {
             ticket.time_resolved = () => "CURRENT_TIMESTAMP";
             ticket.time_last_updated = () => "CURRENT_TIMESTAMP";
