@@ -26,6 +26,13 @@ export function AnnounceNewUser ()
     socket_io.emit(sioMessages.usersUpdated);
 }
 
+const statusMessages = {
+    doesNotExist: 404,
+    unauthorized: 401,
+    badRequest: 400,
+    success: 200
+};
+
 import * as tickets from "./tickets.js";
 import * as db from "./database.js";
 import * as auth from "./authentication.js";
@@ -52,7 +59,7 @@ app.post("/tickets", async (request, response) => {
     }
     else
     {
-        response.sendStatus(401);
+        response.sendStatus(statusMessages.unauthorized);
     }
 });
 
@@ -101,8 +108,8 @@ app.get("/tickets/:ticket_id(" + uuid_regex + ")", async (request, response) => 
 // Claim a ticket (mentors only)
 app.post("/tickets/:ticket_id(" + uuid_regex + ")/claim", async (request, response) => {
     const claimant_user = await auth.getOrMakeUser(request);
-    const success = await db.claimTicket(request.params.ticket_id, claimant_user);
-    if (success)
+    const status = await db.claimTicket(request.params.ticket_id, claimant_user);
+    if (status == statusMessages.success)
     {
         response.json(true);
         socket_io.emit(sioMessages.ticketsUpdated);
@@ -111,7 +118,7 @@ app.post("/tickets/:ticket_id(" + uuid_regex + ")/claim", async (request, respon
     }
     else
     {
-        response.sendStatus(400);
+        response.sendStatus(status);
         return;
     }
 });
@@ -119,8 +126,8 @@ app.post("/tickets/:ticket_id(" + uuid_regex + ")/claim", async (request, respon
 // Unclaim a ticket (mentor who is claimant only)
 app.post("/tickets/:ticket_id(" + uuid_regex + ")/unclaim", async (request, response) => {
     const claimant_user = await auth.getOrMakeUser(request);
-    const success = await db.unclaimTicket(request.params.ticket_id, claimant_user);
-    if (success)
+    const status = await db.unclaimTicket(request.params.ticket_id, claimant_user);
+    if (status == statusMessages.success)
     {
         response.json(true);
         socket_io.emit(sioMessages.ticketsUpdated);
@@ -129,7 +136,7 @@ app.post("/tickets/:ticket_id(" + uuid_regex + ")/unclaim", async (request, resp
     }
     else
     {
-        response.sendStatus(400);
+        response.sendStatus(status);
         return;
     }
 });
@@ -137,8 +144,8 @@ app.post("/tickets/:ticket_id(" + uuid_regex + ")/unclaim", async (request, resp
 // Resolve a ticket (mentor who is claimant OR ticket author)
 app.post("/tickets/:ticket_id(" + uuid_regex + ")/resolve", async (request, response) => {
     const resolving_user = await auth.getOrMakeUser(request);
-    const success = await db.resolveTicket(request.params.ticket_id, resolving_user);
-    if (success)
+    const status = await db.resolveTicket(request.params.ticket_id, resolving_user);
+    if (status == statusMessages.success)
     {
         response.json(true);
         socket_io.emit(sioMessages.ticketsUpdated);
@@ -147,7 +154,7 @@ app.post("/tickets/:ticket_id(" + uuid_regex + ")/resolve", async (request, resp
     }
     else
     {
-        response.sendStatus(400);
+        response.sendStatus(status);
         return;
     }
 });
@@ -155,8 +162,8 @@ app.post("/tickets/:ticket_id(" + uuid_regex + ")/resolve", async (request, resp
 // Unresolve a ticket (mentor who is claimant OR ticket author)
 app.post("/tickets/:ticket_id(" + uuid_regex + ")/unresolve", async (request, response) => {
     const unresolving_user = await auth.getOrMakeUser(request);
-    const success = await db.unresolveTicket(request.params.ticket_id, unresolving_user);
-    if (success)
+    const status = await db.unresolveTicket(request.params.ticket_id, unresolving_user);
+    if (status == statusMessages.success)
     {
         response.json(true);
         socket_io.emit(sioMessages.ticketsUpdated);
@@ -165,7 +172,7 @@ app.post("/tickets/:ticket_id(" + uuid_regex + ")/unresolve", async (request, re
     }
     else
     {
-        response.sendStatus(400);
+        response.sendStatus(status);
         return;
     }
 });
@@ -204,48 +211,40 @@ app.get("/users/:user_id(" + uuid_regex + ")", async (request, response) => {
 // Make a user an admin (admins only)
 app.post("/users/:user_id(" + uuid_regex + ")/adminstatus", async (request, response) => {
     const requestingUser = await auth.getOrMakeUser(request);
+    const targetUser = await getUser(user_id);
     const ticket_request = request.body;
-
-    if (requestingUser && requestingUser.is_admin && ticket_request.status != null && requestingUser.user_id != request.params.user_id)  // One cannot change their own admin status
+    const status = await db.setUserAdminStatus(requestingUser, targetUser, ticket_request.status);
+    
+    if (status == statusMessages.success)
     {
-        const success = await db.setUserAdminStatus(request.params.user_id, ticket_request.status);
-        if (success)
-        {
-            response.json(true);
-            socket_io.emit(sioMessages.usersUpdated);
-            return;
-        }
-        else
-        {
-            response.sendStatus(400);
-            return;
-        }
+        response.json(true);
+        socket_io.emit(sioMessages.usersUpdated);
+        return;
     }
     else
     {
-        response.sendStatus(401);
+        response.sendStatus(status);
+        return;
     }
 });
 
 // Make a user a mentor (admins only)
 app.post("/users/:user_id(" + uuid_regex + ")/mentorstatus", async (request, response) => {
     const requestingUser = await auth.getOrMakeUser(request);
+    const targetUser = await getUser(user_id);
     const ticket_request = request.body;
-
-    if (requestingUser && requestingUser.is_admin && ticket_request.status != null)
+    const status = await db.setUserMentorStatus(requestingUser, targetUser, ticket_request.status);
+    
+    if (status == statusMessages.success)
     {
-        const success = await db.setUserMentorStatus(request.params.user_id, ticket_request.status);
-        if (success)
-        {
-            response.json(true);
-            socket_io.emit(sioMessages.usersUpdated);
-            return;
-        }
-        else
-        {
-            response.sendStatus(400);
-            return;
-        }
+        response.json(true);
+        socket_io.emit(sioMessages.usersUpdated);
+        return;
+    }
+    else
+    {
+        response.sendStatus(status);
+        return;
     }
 });
 

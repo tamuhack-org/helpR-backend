@@ -14,6 +14,14 @@ export const pgPool = new pg.Pool({  // Only use this when absolutely needed, us
     }
 });
 
+// Corny JavaScript won't let me import this from another module
+const statusMessages = {
+    doesNotExist: 404,
+    unauthorized: 401,
+    badRequest: 400,
+    success: 200
+};
+
 // Database entities
 
 const User = new EntitySchema ({
@@ -200,9 +208,17 @@ export async function getTicket (ticket_id)
 export async function claimTicket (ticket_id, claimant)
 {
     let ticket = await getTicket(ticket_id);
-    if (ticket == null || claimant == null || claimant.is_mentor == false || claimant.currently_claimed_ticket_id != null || ticket.time_claimed != null)
+    if (ticket == null)
     {
-        return false;
+        return statusMessages.doesNotExist;
+    }
+    else if (claimant == null || claimant.is_mentor == false)
+    {
+        return statusMessages.unauthorized;
+    }
+    else if (claimant.currently_claimed_ticket_id != null || ticket.time_claimed != null)
+    {
+        return statusMessages.badRequest;
     }
     else
     {
@@ -215,106 +231,130 @@ export async function claimTicket (ticket_id, claimant)
         updatedClaimant.currently_claimed_ticket_id = ticket_id;
         await userRepository.save(updatedClaimant);
 
-        return true;
+        return statusMessages.success;
     }
 }
 
 export async function unclaimTicket (ticket_id, claimant)
 {
     let ticket = await getTicket(ticket_id);
-    if (ticket == null || claimant == null || ticket.time_claimed == null)  // Users can still unclaim a ticket if they are no longer a mentor, I guess
+    if (ticket == null)  // Users can still unclaim a ticket if they are no longer a mentor, I guess
     {
-        return false;
+        return statusMessages.doesNotExist;
+    }
+    else if (claimant == null)
+    {
+        return statusMessages.unauthorized;
+    }
+    else if (ticket.time_claimed == null)
+    {
+        return statusMessages.badRequest;
+    }
+    else if (ticket.claimant.user_id == claimant.user_id)
+    {
+        ticket.claimant = null;
+        ticket.time_claimed = null;
+        ticket.time_last_updated = () => "CURRENT_TIMESTAMP";
+        claimant.claimed_tickets.splice(claimant.claimed_tickets.indexOf(ticket), 1);  // Remove the ticket from the claimant's list of claimed tickets
+        claimant.currently_claimed_ticket_id = null;
+        ticket = await ticketRepository.save(ticket);
+
+        let updatedClaimant = await getUser(claimant.user_id);
+        updatedClaimant.currently_claimed_ticket_id = null;
+        await userRepository.save(updatedClaimant);
+
+        return statusMessages.success;
     }
     else
     {
-        if (ticket.claimant.user_id == claimant.user_id)
-        {
-            ticket.claimant = null;
-            ticket.time_claimed = null;
-            ticket.time_last_updated = () => "CURRENT_TIMESTAMP";
-            claimant.claimed_tickets.splice(claimant.claimed_tickets.indexOf(ticket), 1);  // Remove the ticket from the claimant's list of claimed tickets
-            claimant.currently_claimed_ticket_id = null;
-            ticket = await ticketRepository.save(ticket);
-
-            let updatedClaimant = await getUser(claimant.user_id);
-            updatedClaimant.currently_claimed_ticket_id = null;
-            await userRepository.save(updatedClaimant);
-
-            return true;
-        }
-        return false;
+        return statusMessages.badRequest;
     }
 }
 
 export async function resolveTicket (ticket_id, resolving_user)
 {
     let ticket = await getTicket(ticket_id);
-    if (ticket == null || resolving_user == null || ticket.time_resolved != null)  // Users can still resolve a claimed ticket if they are no longer a mentor, I guess
+    if (ticket == null)  
     {
-        return false;
+        return statusMessages.doesNotExist;
+    }
+    else if (resolving_user == null)  // Users can still resolve a claimed ticket if they are no longer a mentor, I guess
+    {
+        return statusMessages.unauthorized;
+    }
+    else if (ticket.time_resolved != null)
+    {
+        return statusMessages.badRequest;
+    }
+    else if ((ticket.claimant && ticket.claimant.user_id == resolving_user.user_id) || ticket.author.user_id == resolving_user.user_id)
+    {
+        ticket.time_resolved = () => "CURRENT_TIMESTAMP";
+        ticket.time_last_updated = () => "CURRENT_TIMESTAMP";
+        ticket = await ticketRepository.save(ticket); 
+
+        let author = await getUser(ticket.author.user_id); 
+        author.currently_opened_ticket_id = null;
+        await userRepository.save(author);
+        if (ticket.claimant)
+        {
+            let claimant = await getUser(ticket.claimant.user_id);
+            claimant.currently_claimed_ticket_id = null;
+            await userRepository.save(claimant);
+        }
+
+        return statusMessages.success;
     }
     else
     {
-        if ((ticket.claimant && ticket.claimant.user_id == resolving_user.user_id) || ticket.author.user_id == resolving_user.user_id)
-        {
-            ticket.time_resolved = () => "CURRENT_TIMESTAMP";
-            ticket.time_last_updated = () => "CURRENT_TIMESTAMP";
-            ticket = await ticketRepository.save(ticket); 
-
-            let author = await getUser(ticket.author.user_id); 
-            author.currently_opened_ticket_id = null;
-            await userRepository.save(author);
-            if (ticket.claimant)
-            {
-                let claimant = await getUser(ticket.claimant.user_id);
-                claimant.currently_claimed_ticket_id = null;
-                await userRepository.save(claimant);
-            }
-
-            return true;
-        }
-        return false;
+        return statusMessages.badRequest;
     }
 }
 
 export async function unresolveTicket (ticket_id, unresolving_user)
 {
     let ticket = await getTicket(ticket_id);
-    if (ticket == null || unresolving_user == null || ticket.time_resolved == null)
+    if (ticket == null)
     {
-        return false;
+        return statusMessages.doesNotExist;
+    }
+    else if (unresolving_user == null)
+    {
+        return statusMessages.unauthorized;
+    }
+    else if (ticket.time_resolved == null)
+    {
+        return statusMessages.badRequest;
+    }
+    else if (ticket.claimant.user_id == unresolving_user.user_id || ticket.author.user_id == unresolving_user.user_id)
+    {
+        if (ticket.author.currently_opened_ticket_id)
+        {
+            console.log("This is a very niche circumstance so I'll say what happened here: A mentor tried to unresolve a resolved ticket but the original author already has an currently opened ticket so the ticket cannot be unresolved.");
+            return statusMessages.badRequest
+        }
+        if (ticket.claimant.currently_claimed_ticket_id)
+        {
+            return statusMessages.badRequest
+        }
+        ticket.time_resolved = null;
+        ticket.time_last_updated = () => "CURRENT_TIMESTAMP";
+        ticket = await ticketRepository.save(ticket); 
+
+        let author = await getUser(ticket.author.user_id);
+        author.currently_opened_ticket_id = ticket.ticket_id;
+        await userRepository.save(author);
+        if (ticket.claimant)
+        {
+            let claimant = await getUser(ticket.claimant.user_id);
+            claimant.currently_claimed_ticket_id = ticket.ticket_id;
+            await userRepository.save(claimant);
+        }
+
+        return statusMessages.success;
     }
     else
     {
-        if (ticket.claimant.user_id == unresolving_user.user_id || ticket.author.user_id == unresolving_user.user_id)
-        {
-            if (ticket.author.currently_opened_ticket_id)
-            {
-                console.log("This is a very niche circumstance so I'll say what happened here: A mentor tried to unresolve a resolved ticket but the original author already has an currently opened ticket so the ticket cannot be unresolved.");
-                return false;
-            }
-            if (ticket.claimant.currently_claimed_ticket_id)
-            {
-                return false;
-            }
-            ticket.time_resolved = null;
-            ticket.time_last_updated = () => "CURRENT_TIMESTAMP";
-            ticket = await ticketRepository.save(ticket); 
-
-            let author = await getUser(ticket.author.user_id);
-            author.currently_opened_ticket_id = ticket.ticket_id;
-            await userRepository.save(author);
-            if (ticket.claimant)
-            {
-                let claimant = await getUser(ticket.claimant.user_id);
-                claimant.currently_claimed_ticket_id = ticket.ticket_id;
-                await userRepository.save(claimant);
-            }
-
-            return true;
-        }
-        return false;
+        return statusMessages.badRequest;
     }
 }
 
@@ -385,37 +425,51 @@ export async function getUserByEmail (email)
     return user;
 }
 
-export async function setUserAdminStatus (user_id, status)
+export async function setUserAdminStatus (requestingUser, targetUser, adminStatus)
 {
-    const user = await getUser(user_id);
-    if (user == null)
+    if (requestingUser == null || targetUser == null)
     {
-        return false;
+        return statusMessages.doesNotExist;
+    }
+    else if (requestingUser.is_admin == false)
+    {
+        return statusMessages.unauthorized;
+    }
+    else if (adminStatus != null && requestingUser.user_id != targetUser.user_id)  // One cannot change their own admin status
+    {
+        return statusMessages.badRequest;
     }
     else
     {
-        user.is_admin = status;
-        if (status == true)
+        targetUser.is_admin = adminStatus;
+        if (adminStatus == true)
         {
-            user.is_mentor = true;
+            targetUser.is_mentor = true;
         }
-        await userRepository.save(user); 
-        return true;
+        await userRepository.save(targetUser); 
+        return statusMessages.success;
     }
 }
 
-export async function setUserMentorStatus (user_id, status)
+export async function setUserMentorStatus (requestingUser, targetUser, mentorStatus)
 {
-    const user = await getUser(user_id);
-    if (user == null)
+    if (requestingUser == null || targetUser == null)
     {
-        return false;
+        return statusMessages.doesNotExist;
+    }
+    else if (requestingUser.is_admin == false)
+    {
+        return statusMessages.unauthorized;
+    }
+    else if (mentorStatus != null && requestingUser.user_id != targetUser.user_id)  // One cannot change their own mentor status
+    {
+        return statusMessages.badRequest;
     }
     else
     {
-        user.is_mentor = status;
-        await userRepository.save(user); 
-        return true;
+        targetUser.is_mentor = mentorStatus;
+        await userRepository.save(targetUser); 
+        return statusMessages.success;
     }
 }
 
