@@ -55,6 +55,7 @@ app.post("/tickets", async (request, response) => {
     {
         await db.putTicket(ticket, author);
         socket_io.emit(sioMessages.ticketsUpdated);
+        socket_io.emit(sioMessages.usersUpdated);
         response.json({message: "Ticket submitted!"});
     }
     else
