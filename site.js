@@ -50,8 +50,14 @@ app.use(express.json());
 // Post a new ticket
 app.post("/tickets", async (request, response) => {
     const author = await auth.getOrMakeUser(request);
+    if (author == null)  // If request is unauthenticated
+    {
+        response.sendStatus(statusMessages.unauthorized);
+        return;
+    }
+
     const ticket = tickets.makeFromRequest(request, author);
-    if (ticket && author && author.currently_opened_ticket_id == null && !author.is_silenced)
+    if (ticket && author.currently_opened_ticket_id == null && !author.is_silenced)
     {
         await db.putTicket(ticket, author);
         socket_io.emit(sioMessages.ticketsUpdated);
@@ -66,42 +72,91 @@ app.post("/tickets", async (request, response) => {
 
 // Get all tickets
 app.get("/tickets/all", async (request, response) => {
+    const requester = await auth.getOrMakeUser(request);
+    if (requester == null)  // If request is unauthenticated
+    {
+        response.sendStatus(statusMessages.unauthorized);
+        return;
+    }
+
     const allTickets = await db.getAllTickets();
     response.json(allTickets);
 });
 
 // Get all unclaimed tickets
 app.get("/tickets/unclaimed", async (request, response) => {
+    const requester = await auth.getOrMakeUser(request);
+    if (requester == null)  // If request is unauthenticated
+    {
+        response.sendStatus(statusMessages.unauthorized);
+        return;
+    }
+
     const unclaimedTickets = await db.getUnclaimedTickets();
     response.json(unclaimedTickets);
 });
 
 // Get all claimed tickets
 app.get("/tickets/claimed", async (request, response) => {
+    const requester = await auth.getOrMakeUser(request);
+    if (requester == null)  // If request is unauthenticated
+    {
+        response.sendStatus(statusMessages.unauthorized);
+        return;
+    }
+
     const claimedTickets = await db.getClaimedTickets();
     response.json(claimedTickets);
 });
 
 // Get all claimed and unresolved tickets
 app.get("/tickets/claimedunresolved", async (request, response) => {
+    const requester = await auth.getOrMakeUser(request);
+    if (requester == null)  // If request is unauthenticated
+    {
+        response.sendStatus(statusMessages.unauthorized);
+        return;
+    }
+
     const claimedTickets = await db.getClaimedUnresolvedTickets();
     response.json(claimedTickets);
 });
 
 // Get all unresolved tickets (previously known as "active" tickets)
 app.get("/tickets/unresolved", async (request, response) => {
+    const requester = await auth.getOrMakeUser(request);
+    if (requester == null)  // If request is unauthenticated
+    {
+        response.sendStatus(statusMessages.unauthorized);
+        return;
+    }
+
     const unresolvedTickets = await db.getUnresolvedTickets();
     response.json(unresolvedTickets);
 });
 
 // Get all resolved tickets
 app.get("/tickets/resolved", async (request, response) => {
+    const requester = await auth.getOrMakeUser(request);
+    if (requester == null)  // If request is unauthenticated
+    {
+        response.sendStatus(statusMessages.unauthorized);
+        return;
+    }
+    
     const resolvedTickets = await db.getResolvedTickets();
     response.json(resolvedTickets);
 });
 
 // Get a specific ticket
 app.get("/tickets/:ticket_id(" + uuid_regex + ")", async (request, response) => {
+    const requester = await auth.getOrMakeUser(request);
+    if (requester == null)  // If request is unauthenticated
+    {
+        response.sendStatus(statusMessages.unauthorized);
+        return;
+    }
+
     const ticket = await db.getTicket(request.params.ticket_id);
     response.json(ticket);
 });
@@ -180,6 +235,13 @@ app.post("/tickets/:ticket_id(" + uuid_regex + ")/unresolve", async (request, re
 
 // Get all users
 app.get("/users/all", async (request, response) => {
+    const requester = await auth.getOrMakeUser(request);
+    if (requester == null)  // If request is unauthenticated
+    {
+        response.sendStatus(statusMessages.unauthorized);
+        return;
+    }
+
     const allUsers = await db.getAllUsers();
     response.json(allUsers);
     return;
@@ -187,24 +249,52 @@ app.get("/users/all", async (request, response) => {
 
 // Get all mentors
 app.get("/users/mentors", async (request, response) => {
+    const requester = await auth.getOrMakeUser(request);
+    if (requester == null)  // If request is unauthenticated
+    {
+        response.sendStatus(statusMessages.unauthorized);
+        return;
+    }
+
     const mentors = await db.getMentors();
     response.json(mentors);
 });
 
 // Get all admins
 app.get("/users/admins", async (request, response) => {
+    const requester = await auth.getOrMakeUser(request);
+    if (requester == null)  // If request is unauthenticated
+    {
+        response.sendStatus(statusMessages.unauthorized);
+        return;
+    }
+
     const admins = await db.getAdmins();
     response.json(admins);
 });
 
 // Get the currently logged in user
 app.get("/users/me", async (request, response) => {
+    const requester = await auth.getOrMakeUser(request);
+    if (requester == null)  // If request is unauthenticated
+    {
+        response.sendStatus(statusMessages.unauthorized);
+        return;
+    }
+
     const user = await auth.getOrMakeUser(request);
     response.json(user);
 });
 
 // Get a specific user
 app.get("/users/:user_id(" + uuid_regex + ")", async (request, response) => {
+    const requester = await auth.getOrMakeUser(request);
+    if (requester == null)  // If request is unauthenticated
+    {
+        response.sendStatus(statusMessages.unauthorized);
+        return;
+    }
+    
     const user = await db.getUser(request.params.user_id);
     response.json(user);
 });
