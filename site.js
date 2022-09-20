@@ -302,7 +302,7 @@ app.get("/users/:user_id(" + uuid_regex + ")", async (request, response) => {
 // Make a user an admin (admins only)
 app.post("/users/:user_id(" + uuid_regex + ")/adminstatus", async (request, response) => {
     const requestingUser = await auth.getOrMakeUser(request);
-    const targetUser = await getUser(user_id);
+    const targetUser = await db.getUser(request.params.user_id);
     const ticket_request = request.body;
     const status = await db.setUserAdminStatus(requestingUser, targetUser, ticket_request.status);
     
@@ -322,7 +322,7 @@ app.post("/users/:user_id(" + uuid_regex + ")/adminstatus", async (request, resp
 // Make a user a mentor (admins only)
 app.post("/users/:user_id(" + uuid_regex + ")/mentorstatus", async (request, response) => {
     const requestingUser = await auth.getOrMakeUser(request);
-    const targetUser = await getUser(user_id);
+    const targetUser = await db.getUser(request.params.user_id);
     const ticket_request = request.body;
     const status = await db.setUserMentorStatus(requestingUser, targetUser, ticket_request.status);
     

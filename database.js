@@ -435,7 +435,7 @@ export async function setUserAdminStatus (requestingUser, targetUser, adminStatu
     {
         return statusMessages.unauthorized;
     }
-    else if (adminStatus != null && requestingUser.user_id != targetUser.user_id)  // One cannot change their own admin status
+    else if (adminStatus == null || requestingUser.user_id == targetUser.user_id)  // One cannot change their own admin status
     {
         return statusMessages.badRequest;
     }
@@ -461,7 +461,7 @@ export async function setUserMentorStatus (requestingUser, targetUser, mentorSta
     {
         return statusMessages.unauthorized;
     }
-    else if (mentorStatus != null && requestingUser.user_id != targetUser.user_id)  // One cannot change their own mentor status
+    else if (mentorStatus == null || requestingUser.user_id == targetUser.user_id)  // One cannot change their own mentor status
     {
         return statusMessages.badRequest;
     }
