@@ -15,15 +15,6 @@ const socket_io = new Server(server, {
     }
 });
 
-lkjfhdgkljshdflkjg
-SVGFEDiffuseLightingElementsdfg
-s;df
-g's;df
-'gs;d
-f'gds
-'gs
-d'
-
 const sioMessages = {
     ticketsUpdated: "tickets updated",
     usersUpdated: "users updated"
