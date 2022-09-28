@@ -260,6 +260,57 @@ app.get("/users/mentors", async (request, response) => {
     response.json(mentors);
 });
 
+// Get all mentors' stats
+app.get("/users/mentors/stats", async (request, response) => {
+    const requester = await auth.getOrMakeUser(request);
+    if (requester == null)  // If request is unauthenticated
+    {
+        response.sendStatus(statusMessages.unauthorized);
+        return;
+    }
+
+    const mentors = await db.getMentors();
+
+    let mentorStats = {};
+    
+    for (let mentor of mentors)
+    {
+        let num_resolved_tickets = 0;
+        let num_resolved_tickets_excluding_own = 0;
+
+        for (let claimed_ticket of mentor.claimed_tickets)
+        {
+            if (claimed_ticket.time_resolved != null)
+            {
+                num_resolved_tickets++;
+                let resolved_own_ticket = false;
+                for (let opened_ticket of mentor.opened_tickets)
+                {
+                    if (opened_ticket.ticket_id == claimed_ticket.ticket_id)
+                    {
+                        resolved_own_ticket = true;
+                        break;
+                    }
+                }
+
+                if (!resolved_own_ticket)
+                {
+                    num_resolved_tickets_excluding_own++;
+                }
+            }
+        }
+
+        mentorStats[mentor.user_id] = {
+            name: mentor.name,
+            num_claimed_tickets: mentor.claimed_tickets.length,
+            num_resolved_tickets: num_resolved_tickets,
+            num_resolved_tickets_excluding_own: num_resolved_tickets_excluding_own
+        };
+    }
+
+    response.json(mentorStats);
+});
+
 // Get all admins
 app.get("/users/admins", async (request, response) => {
     const requester = await auth.getOrMakeUser(request);
